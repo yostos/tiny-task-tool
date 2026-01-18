@@ -119,11 +119,23 @@ ttt
 
 ### 配置場所
 
+XDG Base Directory仕様に準拠：
+
+1. 環境変数`XDG_CONFIG_HOME`が設定されている場合 → `$XDG_CONFIG_HOME/ttt/config.toml`
+2. 設定されていない場合 → `os.UserConfigDir()/ttt/config.toml`
+
 ```
-~/.config/ttt/config.toml
+# 例: Linux（XDG_CONFIG_HOME未設定、os.UserConfigDir() = /home/foo/.config）
+/home/foo/.config/ttt/config.toml
+
+# 例: XDG_CONFIG_HOME=/custom/config の場合
+/custom/config/ttt/config.toml
 ```
 
-XDG Base Directory仕様に準拠した標準的な場所に配置します。
+### 自動作成
+
+設定ファイルが存在しない場合、初回起動時にデフォルト値で自動作成します。
+ディレクトリが存在しない場合も自動的に作成します。
 
 ### 設定ファイルの構成
 

@@ -198,16 +198,65 @@ main (常にリリース可能)
 
 ## アーキテクチャ
 
-（実装開始後に詳細を記載）
-
 ### ディレクトリ構成
 
-TBD
+```
+ttt/
+├── main.go                 # エントリーポイント
+├── go.mod                  # Goモジュール定義
+├── go.sum                  # 依存関係ハッシュ
+├── .golangci.yml           # linter設定
+├── docs/                   # ドキュメント
+│   ├── concept.md
+│   ├── specification.md
+│   ├── architecture.md
+│   └── TODO.md
+└── internal/               # 内部パッケージ
+    ├── cli/                # CLI引数解析
+    │   ├── cli.go
+    │   └── cli_test.go
+    ├── config/             # 設定ファイル読み込み
+    │   ├── config.go
+    │   └── config_test.go
+    ├── task/               # タスク操作（パース、追加、アーカイブ）
+    └── tui/                # TUI（bubbletea）
+```
 
 ### モジュール構成
 
-TBD
+| パッケージ | 責務 |
+|-----------|------|
+| `main` | エントリーポイント、初期化、モード分岐 |
+| `internal/cli` | CLI引数解析（pflag使用） |
+| `internal/config` | 設定ファイル読み込み、デフォルト値管理 |
+| `internal/task` | タスクファイルの読み書き、アーカイブ処理 |
+| `internal/tui` | TUI表示、キー入力処理（bubbletea） |
 
 ### データフロー
 
-TBD
+```
+起動
+  │
+  ├─ CLI引数解析
+  │    │
+  │    ├─ --help/--version → 表示して終了
+  │    │
+  │    └─ --task → タスク追加 → git commit → 終了
+  │
+  └─ TUIモード
+       │
+       ├─ 設定読み込み
+       ├─ working_dir確保（自動作成、git init）
+       ├─ tasks.md読み込み
+       ├─ @done自動追加（新規完了タスク検出時）
+       ├─ 自動アーカイブ（archive.auto=true時）
+       │
+       └─ TUIループ
+            ├─ 表示
+            ├─ キー入力待ち
+            │    ├─ e → エディタ起動 → 再読み込み → git commit
+            │    ├─ a → アーカイブ実行 → git commit
+            │    ├─ r → 再読み込み
+            │    └─ q → 終了
+            └─ 状態更新
+```
