@@ -102,6 +102,27 @@ gh issue create --title "Bug report" --body "Description"
 gh release create v0.1.0 --notes "Release notes"
 ```
 
+### Bug Fix Workflow (Issue-Driven)
+
+バグ修正はGitHub Issueを起点として行う：
+
+1. **Issue作成**: バグを発見したら `gh issue create` でIssue作成
+2. **ブランチ作成**: `fix/issue-番号` ブランチを作成
+3. **修正＆テスト**: TDDで修正、`go test ./...` と `golangci-lint run` をパス
+4. **ユーザー確認**: 修正内容をユーザーが検証
+5. **PR作成**: `gh pr create` でPull Request作成
+6. **マージ**: GitHub上でmainにsquash merge
+
+```bash
+# 例: Issue #1 のバグ修正
+gh issue create --title "Bug: ..." --body "Description"
+git checkout -b fix/issue-1
+# ... 修正作業 ...
+go test ./... && golangci-lint run
+gh pr create --title "Fix #1: ..." --body "Closes #1"
+# GitHub上でマージ
+```
+
 ## Development Guidelines (MANDATORY)
 
 ### Test Requirements
