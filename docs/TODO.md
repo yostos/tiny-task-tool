@@ -99,6 +99,11 @@
 
 - [x] 変更をコミット
 - [x] PR作成（`gh pr create`）
+- [x] v0.2.0 タグ作成・GitHub Release 公開
+- [x] CI ワークフロー追加（test + golangci-lint）
+- [x] README にバッジ追加（CI, Go, License, Release）
+- [x] LICENSE ファイル追加（MIT）
+- [x] CHANGELOG.md 追加
 
 #### 長期テスト(ユーザー作業)
 
@@ -106,5 +111,5 @@
 
 #### 公開用β版の準備
 
-- [ ] GO言語の慣習の基づいたリリースの準備
+- [ ] Go言語の慣習に基づいたリリースの準備
 - [ ] Homebrewでのパッケージリリースの準備
