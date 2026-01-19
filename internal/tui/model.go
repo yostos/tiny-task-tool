@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/yostos/tiny-task-tool/internal/cli"
 	"github.com/yostos/tiny-task-tool/internal/config"
 	"github.com/yostos/tiny-task-tool/internal/task"
 )
@@ -278,7 +279,7 @@ func (m Model) footerView() string {
 		left = "? help | e edit | a archive | q quit"
 	}
 
-	// Right side: scroll position
+	// Right side: scroll position and version
 	totalLines := len(m.lines)
 	currentLine := m.viewport.YOffset + 1
 	if currentLine > totalLines {
@@ -288,9 +289,11 @@ func (m Model) footerView() string {
 		totalLines = 1
 		currentLine = 1
 	}
+	position := formatPosition(currentLine, totalLines)
+	version := "ttt " + cli.Version
 	right := lipgloss.NewStyle().
 		Align(lipgloss.Right).
-		Render(formatPosition(currentLine, totalLines))
+		Render(position + " " + version)
 
 	// Calculate padding
 	leftWidth := lipgloss.Width(left)
