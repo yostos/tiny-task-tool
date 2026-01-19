@@ -1,8 +1,11 @@
 # ttt (Tiny Task Tool)
 
-A minimal TUI task manager for the terminal.
+[![CI](https://github.com/yostos/tiny-task-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/yostos/tiny-task-tool/actions/workflows/ci.yml)
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yostos/tiny-task-tool)](https://github.com/yostos/tiny-task-tool/releases)
 
-**Status:** Beta
+A minimal TUI task manager for the terminal.
 
 ## Philosophy
 
