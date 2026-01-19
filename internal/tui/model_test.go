@@ -52,16 +52,17 @@ func TestNew(t *testing.T) {
 	}
 }
 
-// TestInit verifies that Init() returns nil command.
-// The TUI doesn't need any initialization commands on startup.
+// TestInit verifies that Init() returns addDoneTagsCmd by default.
+// Spec: docs/specification.md line 49, 319 - @done tags should be added at TUI startup.
 func TestInit(t *testing.T) {
 	cfg := config.Default()
 	m := New(cfg, "- [ ] Task")
+	m.tasksPath = testTasksPath
 
 	cmd := m.Init()
 
-	if cmd != nil {
-		t.Error("Init() should return nil, no initialization commands needed")
+	if cmd == nil {
+		t.Error("Init() should return addDoneTagsCmd to process @done tags at startup")
 	}
 }
 
@@ -624,8 +625,8 @@ func TestHelpOverlayDoesNotQuit(t *testing.T) {
 	}
 }
 
-// TestInitWithAutoArchiveDisabled verifies that Init() returns nil when archive.auto is false.
-// Spec: docs/specification.md "設定ファイル仕様" - archive.auto defaults to false.
+// TestInitWithAutoArchiveDisabled verifies that Init() returns addDoneTagsCmd when archive.auto is false.
+// Spec: docs/specification.md line 49, 319 - @done tags should be added at TUI startup.
 func TestInitWithAutoArchiveDisabled(t *testing.T) {
 	cfg := config.Default()
 	cfg.Archive.Auto = false
@@ -635,8 +636,8 @@ func TestInitWithAutoArchiveDisabled(t *testing.T) {
 
 	cmd := m.Init()
 
-	if cmd != nil {
-		t.Error("Init() should return nil when archive.auto is false")
+	if cmd == nil {
+		t.Error("Init() should return addDoneTagsCmd when archive.auto is false")
 	}
 }
 
@@ -731,5 +732,70 @@ func TestUpdateReloadFinishedMsgWithError(t *testing.T) {
 	// Timeout command should be returned for auto-clear
 	if cmd == nil {
 		t.Error("ReloadFinishedMsg with error should return timeout command")
+	}
+}
+
+// TestUpdateAddDoneTagsFinishedMsg verifies that AddDoneTagsFinishedMsg updates status and triggers reload.
+// Spec: docs/specification.md line 319 - "3 tasks marked as done" message on startup.
+func TestUpdateAddDoneTagsFinishedMsg(t *testing.T) {
+	cfg := config.Default()
+	m := New(cfg, "- [ ] Task")
+	m.tasksPath = testTasksPath
+
+	// Initialize viewport
+	newModel, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = newModel.(Model)
+
+	tests := []struct {
+		name           string
+		msg            AddDoneTagsFinishedMsg
+		expectedStatus string
+	}{
+		{"modified 3 tasks", AddDoneTagsFinishedMsg{Count: 3, Err: nil}, "3 task(s) marked as done"},
+		{"modified 1 task", AddDoneTagsFinishedMsg{Count: 1, Err: nil}, "1 task(s) marked as done"},
+		{"no tasks modified", AddDoneTagsFinishedMsg{Count: 0, Err: nil}, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newModel, cmd := m.Update(tt.msg)
+			updated := newModel.(Model)
+
+			// Status should be set correctly
+			if tt.msg.Count > 0 && updated.status != tt.expectedStatus {
+				t.Errorf("AddDoneTagsFinishedMsg status = %q, want %q", updated.status, tt.expectedStatus)
+			}
+
+			// Reload command should be returned
+			if cmd == nil {
+				t.Error("AddDoneTagsFinishedMsg should return reload command")
+			}
+		})
+	}
+}
+
+// TestUpdateAddDoneTagsFinishedMsgWithError verifies that @done tag errors are displayed in status.
+// Spec: docs/specification.md line 49 - @done tag processing should handle errors gracefully.
+func TestUpdateAddDoneTagsFinishedMsgWithError(t *testing.T) {
+	cfg := config.Default()
+	m := New(cfg, "- [ ] Task")
+
+	// Initialize viewport
+	newModel, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = newModel.(Model)
+
+	// Send AddDoneTagsFinishedMsg with error
+	testErr := fmt.Errorf("permission denied")
+	newModel, cmd := m.Update(AddDoneTagsFinishedMsg{Count: 0, Err: testErr})
+	m = newModel.(Model)
+
+	// Status should show error
+	if !strings.Contains(m.status, "Error:") {
+		t.Errorf("status should contain 'Error:', got %q", m.status)
+	}
+
+	// Timeout command should be returned for auto-clear
+	if cmd == nil {
+		t.Error("AddDoneTagsFinishedMsg with error should return timeout command")
 	}
 }

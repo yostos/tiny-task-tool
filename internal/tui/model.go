@@ -60,12 +60,13 @@ func NewWithPaths(cfg *config.Config, content, tasksPath, archivePath string) Mo
 }
 
 // Init initializes the model.
-// If archive.auto is enabled, returns a command to run auto-archive at startup.
+// Always adds @done tags to completed tasks at startup.
+// If archive.auto is enabled, also runs auto-archive.
 func (m Model) Init() tea.Cmd {
 	if m.config.Archive.Auto {
 		return m.archiveCmd()
 	}
-	return nil
+	return m.addDoneTagsCmd()
 }
 
 // Update handles messages and updates the model.
@@ -110,8 +111,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m, cmd := m.setStatusWithTimeout("Error: " + msg.Err.Error())
 			return m, cmd
 		}
-		// Reload after editing
-		return m, m.reloadCmd()
+		// Add @done tags, then reload
+		return m, m.addDoneTagsAndReloadCmd()
 
 	case ArchiveFinishedMsg:
 		if msg.Err != nil {
@@ -136,6 +137,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.SetContent(msg.Content)
 		m, cmd := m.setStatusWithTimeout("Reloaded")
 		return m, cmd
+
+	case AddDoneTagsFinishedMsg:
+		if msg.Err != nil {
+			m, cmd := m.setStatusWithTimeout("Error: " + msg.Err.Error())
+			return m, cmd
+		}
+		if msg.Count > 0 {
+			m.status = strconv.Itoa(msg.Count) + " task(s) marked as done"
+			// Reload to show updated content, status will be set with timeout after reload
+			return m, m.reloadCmd()
+		}
+		// No tasks modified, just reload
+		return m, m.reloadCmd()
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -339,6 +353,12 @@ type ReloadFinishedMsg struct {
 	Err     error
 }
 
+// AddDoneTagsFinishedMsg is sent when adding @done tags completes.
+type AddDoneTagsFinishedMsg struct {
+	Count int
+	Err   error
+}
+
 // editCmd returns a command that launches the external editor.
 // It uses tea.ExecProcess to suspend the TUI and run the editor.
 func (m Model) editCmd() tea.Cmd {
@@ -382,6 +402,29 @@ func (m Model) reloadCmd() tea.Cmd {
 	return func() tea.Msg {
 		content, err := task.LoadFile(tasksPath)
 		return ReloadFinishedMsg{Content: content, Err: err}
+	}
+}
+
+// addDoneTagsCmd returns a command that adds @done tags to completed tasks.
+func (m Model) addDoneTagsCmd() tea.Cmd {
+	tasksPath := m.tasksPath
+
+	return func() tea.Msg {
+		count, err := task.ProcessFileWithDoneTags(tasksPath)
+		return AddDoneTagsFinishedMsg{Count: count, Err: err}
+	}
+}
+
+// addDoneTagsAndReloadCmd returns a command that adds @done tags and then reloads.
+func (m Model) addDoneTagsAndReloadCmd() tea.Cmd {
+	tasksPath := m.tasksPath
+
+	return func() tea.Msg {
+		count, err := task.ProcessFileWithDoneTags(tasksPath)
+		if err != nil {
+			return AddDoneTagsFinishedMsg{Count: 0, Err: err}
+		}
+		return AddDoneTagsFinishedMsg{Count: count, Err: nil}
 	}
 }
 
