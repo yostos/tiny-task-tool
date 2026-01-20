@@ -799,3 +799,119 @@ func TestUpdateAddDoneTagsFinishedMsgWithError(t *testing.T) {
 		t.Error("AddDoneTagsFinishedMsg with error should return timeout command")
 	}
 }
+
+// TestPadRightWithMultibyteCharacters verifies that padRight() correctly handles
+// multibyte characters (e.g., Japanese) using display width instead of byte length.
+// Spec: Issue #9 - Help dialog layout broken with Japanese text background.
+//
+// Display width rules:
+// - ASCII characters: 1 column each
+// - Japanese characters (full-width): 2 columns each
+func TestPadRightWithMultibyteCharacters(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		width    int
+		expected string
+	}{
+		// ASCII baseline tests
+		{"ASCII fits exactly", "abc", 3, "abc"},
+		{"ASCII needs padding", "ab", 5, "ab   "},
+		{"ASCII exceeds width", "abcde", 3, "abcde"},
+
+		// Japanese character tests (each Japanese char = 2 display columns)
+		{"Japanese single char needs padding", "あ", 4, "あ  "}, // 2 cols + 2 spaces
+		{"Japanese fits exactly", "あい", 4, "あい"},              // 2+2 = 4 cols
+		{"Japanese exceeds width", "あいう", 4, "あいう"},           // 6 cols > 4, no padding
+
+		// Mixed ASCII and Japanese tests
+		{"Mixed needs padding", "aあb", 6, "aあb  "}, // 1+2+1=4 cols + 2 spaces
+
+		// Edge cases
+		{"Empty string", "", 3, "   "},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := padRight(tt.input, tt.width)
+			if result != tt.expected {
+				t.Errorf("padRight(%q, %d) = %q, want %q", tt.input, tt.width, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestPlaceOverlayWithMultibyteBackground verifies that placeOverlay() correctly
+// handles backgrounds containing multibyte characters (e.g., Japanese).
+// This is the core fix for Issue #9 - Help dialog layout broken with Japanese text.
+//
+// The x position is in display columns, not bytes:
+// - Position 0 = start
+// - Position 2 = after one Japanese character (which takes 2 columns)
+// - Position 4 = after two Japanese characters
+func TestPlaceOverlayWithMultibyteBackground(t *testing.T) {
+	tests := []struct {
+		name       string
+		x          int
+		y          int
+		overlay    string
+		background string
+		expected   string
+	}{
+		// ASCII baseline
+		{
+			name:       "ASCII overlay on ASCII background",
+			x:          2,
+			y:          0,
+			overlay:    "XX",
+			background: "abcdef",
+			expected:   "abXXef",
+		},
+
+		// Japanese background tests
+		{
+			name:       "Overlay on Japanese background at position 4",
+			x:          4,
+			y:          0,
+			overlay:    "XX",
+			background: "あいうえお",  // Each char = 2 columns: positions 0,2,4,6,8
+			expected:   "あいXXえお", // XX replaces "う" at position 4-5
+		},
+		{
+			name:       "Overlay at start of Japanese background",
+			x:          0,
+			y:          0,
+			overlay:    "XX",
+			background: "あいうえお",
+			expected:   "XXいうえお", // XX replaces "あ" at position 0-1
+		},
+		{
+			name:       "Overlay at position 2 (after first Japanese char)",
+			x:          2,
+			y:          0,
+			overlay:    "YY",
+			background: "あいうえお",
+			expected:   "あYYうえお", // YY replaces "い" at position 2-3
+		},
+
+		// Edge case: overlay extends beyond background
+		{
+			name:       "Overlay beyond background width",
+			x:          2,
+			y:          0,
+			overlay:    "XX",
+			background: "ab",
+			expected:   "abXX",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := placeOverlay(tt.x, tt.y, tt.overlay, tt.background)
+			if result != tt.expected {
+				t.Errorf("placeOverlay(%d, %d, %q, %q) = %q, want %q",
+					tt.x, tt.y, tt.overlay, tt.background, result, tt.expected)
+			}
+		})
+	}
+}
