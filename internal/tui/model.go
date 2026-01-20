@@ -513,15 +513,18 @@ func formatKeys(keys []string, arrowKey string) string {
 	return arrowKey
 }
 
-// padRight pads a string to the given width.
+// padRight pads a string to the given display width.
+// Uses lipgloss.Width to correctly handle multibyte characters (e.g., Japanese).
 func padRight(s string, width int) string {
-	if len(s) >= width {
+	w := lipgloss.Width(s)
+	if w >= width {
 		return s
 	}
-	return s + strings.Repeat(" ", width-len(s))
+	return s + strings.Repeat(" ", width-w)
 }
 
 // placeOverlay places an overlay string on top of a background at the given position.
+// Correctly handles multibyte characters by using display width calculations.
 func placeOverlay(x, y int, overlay, background string) string {
 	bgLines := strings.Split(background, "\n")
 	overlayLines := strings.Split(overlay, "\n")
@@ -538,34 +541,60 @@ func placeOverlay(x, y int, overlay, background string) string {
 		}
 
 		bgLine := bgLines[bgIdx]
-		// Ensure background line is wide enough
-		for len(bgLine) < x {
-			bgLine += " "
-		}
 
-		// Insert overlay line
-		newLine := ""
-		if x > 0 && len(bgLine) > 0 {
-			newLine = bgLine[:min(x, len(bgLine))]
-		}
-		newLine += overlayLine
+		// Get the part before the overlay (up to x display width)
+		beforeOverlay := truncateByDisplayWidth(bgLine, x)
 
-		// Append rest of background line if any
-		afterOverlay := x + lipgloss.Width(overlayLine)
-		if afterOverlay < len(bgLine) {
-			newLine += bgLine[afterOverlay:]
-		}
+		// Get the part after the overlay
+		overlayWidth := lipgloss.Width(overlayLine)
+		afterOverlay := skipByDisplayWidth(bgLine, x+overlayWidth)
 
-		bgLines[bgIdx] = newLine
+		bgLines[bgIdx] = beforeOverlay + overlayLine + afterOverlay
 	}
 
 	return strings.Join(bgLines, "\n")
 }
 
-// min returns the smaller of two integers.
-func min(a, b int) int {
-	if a < b {
-		return a
+// truncateByDisplayWidth returns the prefix of s that fits within the given display width.
+// If s is shorter than width, it pads with spaces.
+func truncateByDisplayWidth(s string, width int) string {
+	if width <= 0 {
+		return ""
 	}
-	return b
+
+	var result strings.Builder
+	currentWidth := 0
+
+	for _, r := range s {
+		runeWidth := lipgloss.Width(string(r))
+		if currentWidth+runeWidth > width {
+			break
+		}
+		result.WriteRune(r)
+		currentWidth += runeWidth
+	}
+
+	// Pad with spaces if needed
+	if currentWidth < width {
+		result.WriteString(strings.Repeat(" ", width-currentWidth))
+	}
+
+	return result.String()
+}
+
+// skipByDisplayWidth returns the suffix of s after skipping the given display width.
+func skipByDisplayWidth(s string, width int) string {
+	if width <= 0 {
+		return s
+	}
+
+	currentWidth := 0
+	for i, r := range s {
+		if currentWidth >= width {
+			return s[i:]
+		}
+		currentWidth += lipgloss.Width(string(r))
+	}
+
+	return ""
 }
