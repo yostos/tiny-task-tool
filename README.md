@@ -10,7 +10,7 @@ A minimal TUI task manager for the terminal.
 ## Philosophy
 
 - **One sheet of paper** - One file, no folders, no decisions
-- **Focus on today** - No searching, no past data browsing
+- **Focus on now** - Capture ideas, tasks, and worries the moment they come to mind. No searching, no organizing, just write and clear your head.
 - **Node-oriented** - Tasks are managed as trees, not lines. When you complete a parent, children follow. When you archive, the whole subtree moves together. This matches how humans naturally think of indented blocks as a single unit.
 - **Unix philosophy** - Edit with your favorite editor ($EDITOR)
 
