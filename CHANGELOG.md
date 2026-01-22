@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-22
+
+### Added
+
+- Git sync functionality
+  - `ttt remote <url>` command to register remote repository
+  - `ttt sync` command for manual sync (pull → commit → push)
+  - Auto-generate README.md and .gitignore in working directory
+- Public beta preparation
+  - `go install github.com/yostos/tiny-task-tool@latest` support
+  - Makefile PREFIX variable support (`make install PREFIX=/usr/local`)
+  - Homebrew formula (`brew install yostos/tap/ttt`)
+
+### Changed
+
+- Translated all documentation to English (except TODO.md)
+  - docs/concept.md
+  - docs/specification.md
+  - docs/architecture.md
+  - docs/roadmap.md
+  - CLAUDE.md (Japanese parts)
+- Updated README.md with installation instructions
+
 ## [0.2.1] - 2026-01-20
 
 ### Fixed
