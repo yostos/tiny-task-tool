@@ -1,262 +1,304 @@
-# ttt - アーキテクチャ
+# ttt - Architecture
 
-Updated: 2026-01-18
+Updated: 2026-01-22.
 
-## この文書について
+## About This Document
 
-この文書は ttt (Tiny Task Tool) の技術選定とアーキテクチャを記述します。
-技術選定の過程と意思決定の理由を記録し、将来の参照に備えます。
+This document describes the technology choices and architecture of ttt (Tiny Task Tool).
+It records the decision-making process and rationale for future reference.
 
-- 構想・設計思想については [concept.md](concept.md) を参照
-- 機能仕様については [specification.md](specification.md) を参照
+- For vision and design philosophy, see [concept.md](concept.md)
+- For functional specifications, see [specification.md](specification.md)
 
-## 技術選定
+## Technology Choices
 
-### 決定済みの項目
+### Finalized Decisions
 
-#### プログラミング言語：Go
+#### Programming Language: Go
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- シングルバイナリで配布が容易
-- 起動速度が速い（concept.mdの「摩擦の排除」に合致）
-- 学習コストが低く、AI駆動開発との相性が良い
-- bubbletea（TUIライブラリ）が成熟している
+**Selection Rationale**:
+- Easy distribution as a single binary
+- Fast startup speed (aligns with concept.md's "eliminating friction")
+- Low learning cost, good compatibility with AI-driven development
+- bubbletea (TUI library) is mature
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| Rust | 学習コストが高い。所有権・ライフタイムの概念が独特で、AI駆動開発でコンパイルエラー修正時に理解がないと堂々巡りになるリスク。将来的に学習目的で書き換える可能性は残す。 |
-| Python | PEP 668によりシステムPythonへの直接インストールが制限され、配布が複雑化。pipx等の追加ステップをユーザーに強いることになる。起動速度も遅め。 |
-| Ruby | gem installで配布可能だが、言語としてのモメンタムが下降傾向。AI学習データも今後増えにくく、AI駆動開発を学ぶプラットフォームとしては将来性に懸念。 |
-| TypeScript | AI生成精度は高いが、Node.jsランタイムへの依存が必要。シングルバイナリで配布できない点がconcept.mdの「摩擦の排除」に反する。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| Rust | High learning cost. Ownership/lifetime concepts are unique; risk of going in circles during AI-driven development when fixing compile errors without understanding. Possibility of rewriting for learning purposes remains open for the future. |
+| Python | PEP 668 restricts direct installation to system Python, complicating distribution. Forces additional steps like pipx on users. Startup speed is also slow. |
+| Ruby | Distributable via gem install, but the language's momentum is declining. AI training data unlikely to increase, raising concerns about future viability as a platform for learning AI-driven development. |
+| TypeScript | High AI generation accuracy, but requires Node.js runtime dependency. Cannot distribute as single binary, violating concept.md's "eliminating friction." |
 
-**将来の展望**:
-- 学習目的でRustへの書き換えを検討する可能性あり
-- その場合、ratatui + crossterm を使用予定
+**Future Prospects**:
+- Possible rewrite to Rust for learning purposes
+- Would use ratatui + crossterm in that case
 
-#### 設定ファイル処理：pelletier/go-toml v2
+#### Configuration File Processing: pelletier/go-toml v2
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- TOML 1.0.0 準拠
-- 活発にメンテナンスされている
-- encoding/json ライクなAPIでGo開発者に馴染みやすい
-- Strictモードでタイポ検出が可能
-- 2〜5倍のパフォーマンス優位
+**Selection Rationale**:
+- TOML 1.0.0 compliant
+- Actively maintained
+- encoding/json-like API familiar to Go developers
+- Strict mode enables typo detection
+- 2-5x performance advantage
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| BurntSushi/toml | メンテナンスされていない（unsupported）。TOML 0.4止まり。 |
-| spf13/viper | 多機能だが重厚。本プロジェクトにはオーバースペック。 |
-| knadh/koanf | viperの軽量代替だが、シンプルなTOML読み込みには不要。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| BurntSushi/toml | Not maintained (unsupported). Stuck at TOML 0.4. |
+| spf13/viper | Feature-rich but heavy. Overkill for this project. |
+| knadh/koanf | Lightweight viper alternative, but unnecessary for simple TOML reading. |
 
-#### Markdownパーサー：yuin/goldmark
+#### Markdown Parser: yuin/goldmark
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- 活発にメンテナンスされている（2026-01-06更新）
-- CommonMark 0.31.2 準拠
-- Hugo（静的サイトジェネレータ）がデフォルト採用、32.2k依存の実績
-- タスクリスト拡張をサポート
-- 外部依存なし（標準ライブラリのみ）
-- カスタムAST、パーサー、レンダラーによる高い拡張性
+**Selection Rationale**:
+- Actively maintained (updated 2026-01-06)
+- CommonMark 0.31.2 compliant
+- Default adoption by Hugo (static site generator), 32.2k dependencies track record
+- Task list extension support
+- No external dependencies (standard library only)
+- High extensibility with custom AST, parser, renderer
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| russross/blackfriday | 2020年11月以降更新なし。メンテナンス停止状態。 |
-| gomarkdown/markdown | パフォーマンスが大幅に劣る（約20倍遅い）。更新頻度も低い。 |
-| 正規表現で自前実装 | 見出し・リンク等の色分け対応でパターンが複雑化し、保守性が低下する。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| russross/blackfriday | No updates since November 2020. Maintenance stopped. |
+| gomarkdown/markdown | Significantly inferior performance (about 20x slower). Low update frequency. |
+| Custom regex implementation | Patterns become complex when handling heading/link coloring, reducing maintainability. |
 
-#### CLI引数解析：spf13/pflag
+#### CLI Argument Parsing: spf13/pflag
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- 活発にメンテナンスされている（2025-09-02更新、v1.0.10）
-- 348kプロジェクトが依存する実績
-- POSIX準拠の引数解析
-- 短縮形（`-t`）と長形式（`--task`）を1行で定義可能
-- Go標準のflagパッケージと互換性あり
+**Selection Rationale**:
+- Actively maintained (updated 2025-09-02, v1.0.10)
+- 348k projects depend on it
+- POSIX-compliant argument parsing
+- Can define short form (`-t`) and long form (`--task`) in one line
+- Compatible with Go's standard flag package
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| flag（標準） | 短縮形と長形式の両方を定義するには2回定義が必要で冗長。 |
-| spf13/cobra | サブコマンド機能など、本プロジェクトにはオーバースペック。 |
-| urfave/cli | 機能は十分だが、pflagよりやや重厚。 |
-| alecthomas/kong | 知名度が低く、採用実績がpflagより少ない。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| flag (standard) | Requires two definitions to define both short and long forms; verbose. |
+| spf13/cobra | Features like subcommands are overkill for this project. |
+| urfave/cli | Sufficient features but slightly heavier than pflag. |
+| alecthomas/kong | Lower recognition, fewer adoption cases than pflag. |
 
-#### TUIフレームワーク：charmbracelet/bubbletea
+#### TUI Framework: charmbracelet/bubbletea
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- 圧倒的な採用実績（38.4kスター、17.6k依存プロジェクト）
-- Charm社による継続的なメンテナンス（2025-09-17更新、v1.3.10）
-- Elmアーキテクチャ採用で状態管理が明確、コードが整理しやすい
-- lipgloss（スタイリング）、bubbles（UIコンポーネント）との連携
-- 外部エディタ起動・復帰が容易（exec.Commandとの連携が設計済み）
-- AI駆動開発との相性：パターンが明確でAI生成コードがレビューしやすい
+**Selection Rationale**:
+- Overwhelming adoption (38.4k stars, 17.6k dependent projects)
+- Continuous maintenance by Charm company (updated 2025-09-17, v1.3.10)
+- Clear state management with Elm architecture, easy to organize code
+- Integration with lipgloss (styling) and bubbles (UI components)
+- Easy external editor invocation and return (designed for exec.Command integration)
+- AI-driven development compatibility: Clear patterns make AI-generated code easy to review
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| rivo/tview | ウィジェットベースでやや重厚。tttのシンプルな要件にはオーバースペック。 |
-| gdamore/tcell | 低レベルAPIのため自前実装が多くなり、開発コスト増。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| rivo/tview | Widget-based and somewhat heavy. Overkill for ttt's simple requirements. |
+| gdamore/tcell | Low-level API requires much custom implementation, increasing development cost. |
 
-#### 静的解析：golangci-lint
+#### Static Analysis: golangci-lint
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- Go界隈のデファクトスタンダード
-- 100+のリンターを統合（staticcheck、revive、go vet、errcheck等）
-- 高速実行（並列実行、キャッシュ機能）
-- `.golangci.yml` で一括設定管理
-- GitHub Actions公式アクションあり
+**Selection Rationale**:
+- De facto standard in the Go community
+- Integrates 100+ linters (staticcheck, revive, go vet, errcheck, etc.)
+- Fast execution (parallel execution, caching)
+- Centralized configuration with `.golangci.yml`
+- Official GitHub Actions action available
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| revive単体 | スタイルチェックのみ。golangci-lint経由で使用可能。 |
-| staticcheck単体 | 高品質だが単体では機能限定。golangci-lint経由で使用可能。 |
-| go vet単体 | チェック項目が少ない。golangci-lintに含まれる。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| revive alone | Style checking only. Usable via golangci-lint. |
+| staticcheck alone | High quality but limited features alone. Usable via golangci-lint. |
+| go vet alone | Few check items. Included in golangci-lint. |
 
-#### テスト：testing + testify
+#### Testing: testing + testify
 
-**決定日**: 2026-01-18
+**Decision Date**: 2026-01-18
 
-**選定理由**:
-- Go標準のtestingパッケージをベースに、testifyでアサーションを簡潔に
-- `assert.Equal`等で可読性向上
-- モック機能（testify/mock）も利用可能
-- Go界隈で広く採用されている組み合わせ
+**Selection Rationale**:
+- Based on Go's standard testing package, with concise assertions via testify
+- Improved readability with `assert.Equal`, etc.
+- Mock functionality (testify/mock) also available
+- Widely adopted combination in the Go community
 
-**検討した代替案と不採用理由**:
+**Considered Alternatives and Rejection Reasons**:
 
-| 候補 | 不採用理由 |
-| ---- | ---------- |
-| testing のみ | アサーションが冗長（`if got != want` スタイル）。TDDには非効率。 |
-| ginkgo + gomega | BDDスタイルは学習コスト高く、小規模プロジェクトにはオーバースペック。 |
+| Candidate | Rejection Reason |
+| --------- | ---------------- |
+| testing only | Assertions are verbose (`if got != want` style). Inefficient for TDD. |
+| ginkgo + gomega | BDD style has high learning cost; overkill for small projects. |
 
-**テスト自動化：**
-- 開発時：手動（`go test ./...`）
-- PR時：GitHub Actionsで自動実行（テスト + golangci-lint）
+**Test Automation:**
+- During development: Manual (`go test ./...`)
+- On PR: Automated via GitHub Actions (tests + golangci-lint)
 
-### 検討中の項目
+### Under Consideration
 
-（現時点ではなし）
+(None at this time)
 
-## 技術的制約
+## Technical Constraints
 
-### 言語
+### Language
 
-- Go（バージョンは最新安定版を使用）
+- Go (using latest stable version)
 
-### TUIライブラリ
+### TUI Library
 
 - charmbracelet/bubbletea + lipgloss + bubbles
 
-### 対象環境
+### Target Environments
 
-- 対象OS：Linux、macOS（Windowsは優先度低）
-- 最小サポートターミナル：80x24
+- Target OS: Linux, macOS (Windows is low priority)
+- Minimum supported terminal: 80x24
 
-## Gitブランチ戦略
+## Git Branch Strategy
 
-GitHub Flow を採用します。
+Adopting GitHub Flow.
 
 ```
-main (常にリリース可能)
-  ├── feature/xxx    # 機能追加
-  ├── fix/xxx        # バグ修正
-  └── docs/xxx       # ドキュメント更新
+main (always releasable)
+  ├── feature/xxx    # Feature additions
+  ├── fix/xxx        # Bug fixes
+  └── docs/xxx       # Documentation updates
 ```
 
-**ルール：**
-- `main` は常にリリース可能な状態を維持
-- 作業は必ずブランチを切って行う
-- 完了したらmainにsquash merge
-- バージョンはタグで管理（`v0.1.0` 等）
+**Rules:**
+- `main` is always kept in a releasable state
+- Work is always done on a branch
+- Squash merge to main when complete
+- Versions are managed with tags (`v0.1.0`, etc.)
 
-**選定理由：**
-- 個人開発でシンプルさを重視
-- Git Flowは複雑すぎる（develop/release/hotfix等が不要）
-- Trunk Based Developmentも可能だが、機能単位での管理がしやすいGitHub Flowを採用
+**Selection Rationale:**
+- Prioritizing simplicity for solo development
+- Git Flow is too complex (develop/release/hotfix branches unnecessary)
+- Trunk Based Development is possible, but GitHub Flow is adopted for easier feature-based management
 
-## アーキテクチャ
+## Architecture
 
-### ディレクトリ構成
+### Directory Structure
 
 ```
 ttt/
-├── main.go                 # エントリーポイント
-├── go.mod                  # Goモジュール定義
-├── go.sum                  # 依存関係ハッシュ
-├── .golangci.yml           # linter設定
-├── docs/                   # ドキュメント
+├── main.go                 # Entry point
+├── go.mod                  # Go module definition
+├── go.sum                  # Dependency hashes
+├── .golangci.yml           # Linter configuration
+├── docs/                   # Documentation
 │   ├── concept.md
 │   ├── specification.md
 │   ├── architecture.md
 │   └── TODO.md
-└── internal/               # 内部パッケージ
-    ├── cli/                # CLI引数解析
+└── internal/               # Internal packages
+    ├── cli/                # CLI argument parsing
     │   ├── cli.go
     │   └── cli_test.go
-    ├── config/             # 設定ファイル読み込み
+    ├── config/             # Configuration file loading
     │   ├── config.go
     │   └── config_test.go
-    ├── task/               # タスク操作（パース、追加、アーカイブ）
-    └── tui/                # TUI（bubbletea）
+    ├── task/               # Task operations (parsing, adding, archiving)
+    └── tui/                # TUI (bubbletea)
 ```
 
-### モジュール構成
+### Module Structure
 
-| パッケージ | 責務 |
-|-----------|------|
-| `main` | エントリーポイント、初期化、モード分岐 |
-| `internal/cli` | CLI引数解析（pflag使用） |
-| `internal/config` | 設定ファイル読み込み、デフォルト値管理 |
-| `internal/task` | タスクファイルの読み書き、アーカイブ処理 |
-| `internal/tui` | TUI表示、キー入力処理（bubbletea） |
+| Package | Responsibility |
+|---------|----------------|
+| `main` | Entry point, initialization, mode branching |
+| `internal/cli` | CLI argument parsing (using pflag) |
+| `internal/config` | Configuration file loading, default value management |
+| `internal/task` | Task file reading/writing, archive processing |
+| `internal/tui` | TUI display, key input handling (bubbletea) |
 
-### データフロー
+### Data Flow
 
 ```
-起動
+Startup
   │
-  ├─ CLI引数解析
+  ├─ CLI argument parsing
   │    │
-  │    ├─ --help/--version → 表示して終了
+  │    ├─ --help/--version → Display and exit
   │    │
-  │    └─ --task → タスク追加 → git commit → 終了
+  │    └─ --task → Add task → git commit → Exit
   │
-  └─ TUIモード
+  └─ TUI mode
        │
-       ├─ 設定読み込み
-       ├─ working_dir確保（自動作成、git init）
-       ├─ tasks.md読み込み
-       ├─ @done自動追加（新規完了タスク検出時）
-       ├─ 自動アーカイブ（archive.auto=true時）
+       ├─ Load configuration
+       ├─ Ensure working_dir (auto-create, git init)
+       ├─ Load tasks.md
+       ├─ Auto-add @done (when new completed tasks detected)
+       ├─ Auto-archive (when archive.auto=true)
        │
-       └─ TUIループ
-            ├─ 表示
-            ├─ キー入力待ち
-            │    ├─ e → エディタ起動 → 再読み込み → git commit
-            │    ├─ a → アーカイブ実行 → git commit
-            │    ├─ r → 再読み込み
-            │    └─ q → 終了
-            └─ 状態更新
+       └─ TUI loop
+            ├─ Display
+            ├─ Wait for key input
+            │    ├─ e → Launch editor → Reload → git commit
+            │    ├─ a → Execute archive → git commit
+            │    ├─ r → Reload
+            │    └─ q → Exit
+            └─ Update state
 ```
+
+## Design Decision Notes
+
+Records responsibilities ttt does not handle and how to address them.
+
+### Mobile Access
+
+**Need**: Want to view tasks.md from mobile
+
+**Decision**: ttt is not involved. Solve with GitHub's existing ecosystem.
+
+**Recommended Method**:
+1. Manage `~/.ttt` as a GitHub Private repository
+2. Sync to remote with `ttt sync` (v0.3.0)
+3. View with GitHub Mobile app (authentication required ensures privacy)
+
+**Rationale**: Following Unix philosophy "do one thing well," mobile viewing is delegated to GitHub. ttt focuses on task management, delegating everything else to existing tools to maintain simplicity.
+
+**Note**: Publishing via GitHub Pages makes "access only for yourself" technically difficult (URLs are accessible even from Private repositories if known). GitHub Mobile app requires authentication, ensuring privacy.
+
+### Git Sync is Manual Only (auto_sync Not Provided)
+
+**Decision Date**: 2026-01-22
+
+**Need**: Sync functionality with remote repository
+
+**Decision**: Provide only manual sync via `ttt sync` command; do not provide `auto_sync` setting.
+
+**Rationale**:
+1. **Consideration for offline environments**: Not always online. Displaying errors each time auto-sync fails is a UX problem
+2. **Predictable behavior**: User explicitly runs `ttt sync`, so network communication timing is predictable
+3. **Conflict handling**: Pull conflicts require manual resolution. Auto-sync conflicts would force users to respond at unexpected times
+4. **Maintaining simplicity**: Keep configuration options minimal and behavior simple
+
+**Provided Features**:
+- `ttt remote <url>`: Register remote repository as origin
+- `ttt sync`: Manual sync (pull → commit → push)
+
+**Not Provided**:
+- `git.auto_sync` setting
+- Auto-sync on startup/exit
+- Auto-push after commit

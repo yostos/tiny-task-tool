@@ -113,3 +113,116 @@
 
 - [ ] Go言語の慣習に基づいたリリースの準備
 - [ ] Homebrewでのパッケージリリースの準備
+
+### Phase 8: Git同期機能（v0.3.0）
+
+#### 仕様確定
+
+- [x] ユースケースの整理（remote登録、sync）
+- [x] `ttt remote <url>` の動作仕様決定
+- [x] `ttt sync` の動作仕様決定（pull → commit → push）
+- [x] auto_sync を提供しない理由をADRに記録
+- [x] specification.md に仕様追記
+- [x] リポジトリファイル自動生成（README.md, .gitignore）の仕様追記
+
+#### CLI拡張
+
+- [x] サブコマンド対応の設計
+  - 現在: フラグベース（`-t`, `--help`, `--version`）
+  - 追加: 位置引数でサブコマンド検出（`remote`, `sync`）
+- [x] `internal/cli/cli.go` の修正
+  - Options struct に RemoteURL, Sync フィールド追加
+  - Parse() でサブコマンドを検出
+- [x] `internal/cli/cli_test.go` にテスト追加
+
+#### Git操作の実装
+
+- [x] `internal/git/git.go` の新規作成
+  - `SetRemote(dir, url string) error` - リモート設定
+  - `Sync(dir string) error` - pull → commit → push
+  - `HasRemote(dir, name string) bool` - リモート存在確認
+  - `GetCurrentBranch(dir string) (string, error)` - 現在のブランチ取得
+- [x] `internal/git/git_test.go` にテスト追加
+
+#### main.go の修正
+
+- [x] サブコマンドのルーティング追加
+  - `opts.RemoteURL != ""` → `setRemote(cfg, opts.RemoteURL)`
+  - `opts.Sync` → `syncTasks(cfg)`
+- [x] エラーハンドリング
+  - リモート未設定時のエラーメッセージ
+  - 初回sync時（リモートにブランチなし）のハンドリング
+- [x] `ensureRepoFiles()` - README.md, .gitignore 自動生成
+- [x] `main_test.go` にテスト追加
+
+#### ヘルプの更新
+
+- [x] `cli.Usage()` に `remote` と `sync` を追加
+- [x] README.md に使用例を追記
+
+#### テスト
+
+- [x] ユニットテスト
+  - CLI引数パース（`ttt remote <url>`, `ttt sync`）
+  - Git操作（SetRemote, Sync, HasRemote, GetCurrentBranch）
+  - リポジトリファイル生成（ensureRepoFiles）
+- [x] 自動テスト実行（go test ./... && golangci-lint run）
+
+#### ユーザーテスト項目
+
+- [x] `ttt remote <url>` でリモート登録
+  - 新規登録: `git remote -v` で origin が設定されるか確認
+  - 更新: 既存のoriginがある場合、URLが更新されるか確認
+- [x] `ttt sync` で同期
+  - 正常系: ローカルの変更がリモートにpushされるか確認
+  - 初回sync: リモートにブランチがない場合もpush成功
+- [x] エラーケース
+  - リモート未設定時に `ttt sync` → 適切なエラーメッセージ
+
+#### 公開用β版の準備
+
+##### Go言語の慣習に基づいたリリースの準備
+
+- [x] 仕様: `go install github.com/yostos/tiny-task-tool@latest` で直接インストール可能
+- [x] Makefile の修正
+  - `make install` → `go install` を使用（$GOPATH/bin へ）
+  - `make install PREFIX=/usr/local` → 指定先の bin/ へコピー
+- [x] README.md にインストール手順を追記
+  - go install でのインストール方法
+  - make install でのインストール方法
+  - PATH 設定の説明
+
+##### Homebrewでのパッケージリリースの準備
+
+- [x] homebrew-tap リポジトリの作成（github.com/yostos/homebrew-tap）
+- [x] Homebrew formula の作成（ttt.rb）
+- [x] README.md に `brew install yostos/tap/ttt` を追記
+
+##### ドキュメントの英語化
+
+- [x] docs/concept.md → 英語化
+- [x] docs/specification.md → 英語化
+- [x] docs/architecture.md → 英語化
+- [x] docs/roadmap.md → 英語化
+- [x] CLAUDE.md → 英語化（日本語部分）
+- [x] README.md → 英語で記述（インストール手順含む）
+
+**注意:** TODO.md は日本語のまま維持
+
+#### リリース作業（未実施）
+
+- [ ] コミット
+- [ ] PR作成
+- [ ] マージ
+- [ ] v0.3.0 タグ作成
+- [ ] CHANGELOG.md 更新
+- [ ] GitHub Release 公開
+
+#### リリース作業
+
+- [ ] コミット
+- [ ] PR作成
+- [ ] マージ
+- [ ] v0.3.0 タグ作成
+- [ ] CHANGELOG.md 更新
+- [ ] GitHub Release 公開

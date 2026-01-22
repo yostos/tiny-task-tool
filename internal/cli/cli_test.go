@@ -99,7 +99,7 @@ func TestParseTask(t *testing.T) {
 }
 
 // TestUsage verifies that Usage() returns a non-empty help text.
-// The help text should contain essential usage information.
+// The help text should contain essential usage information including v0.3.0 commands.
 func TestUsage(t *testing.T) {
 	usage := Usage()
 
@@ -107,8 +107,8 @@ func TestUsage(t *testing.T) {
 		t.Error("Usage() returned empty string")
 	}
 
-	// Should contain key elements
-	expectedPhrases := []string{"ttt", "-t", "--task", "--help", "--version"}
+	// Should contain key elements including v0.3.0 commands
+	expectedPhrases := []string{"ttt", "-t", "--task", "--help", "--version", "remote", "sync"}
 	for _, phrase := range expectedPhrases {
 		if !contains(usage, phrase) {
 			t.Errorf("Usage() should contain %q", phrase)
@@ -125,6 +125,68 @@ func TestVersionString(t *testing.T) {
 
 	if vs != expected {
 		t.Errorf("VersionString() = %q, want %q", vs, expected)
+	}
+}
+
+// TestParseRemote verifies that "ttt remote <url>" correctly captures the remote URL.
+// Spec: docs/specification.md "リモートリポジトリの登録（v0.3.0）" section
+func TestParseRemote(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{"https URL", []string{"remote", "https://github.com/user/repo.git"}, "https://github.com/user/repo.git"},
+		{"ssh URL", []string{"remote", "git@github.com:user/repo.git"}, "git@github.com:user/repo.git"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts, err := Parse(tt.args)
+			if err != nil {
+				t.Fatalf("Parse(%v) error: %v", tt.args, err)
+			}
+			if opts.RemoteURL != tt.expected {
+				t.Errorf("Parse(%v) RemoteURL = %q, want %q", tt.args, opts.RemoteURL, tt.expected)
+			}
+		})
+	}
+}
+
+// TestParseRemoteNoURL verifies that "ttt remote" without URL returns an error.
+// Spec: docs/specification.md "リモートリポジトリの登録（v0.3.0）" section
+func TestParseRemoteNoURL(t *testing.T) {
+	_, err := Parse([]string{"remote"})
+	if err == nil {
+		t.Error("Parse([remote]) should return error when URL is missing")
+	}
+}
+
+// TestParseSync verifies that "ttt sync" sets Sync to true.
+// Spec: docs/specification.md "手動同期（v0.3.0）" section
+func TestParseSync(t *testing.T) {
+	opts, err := Parse([]string{"sync"})
+	if err != nil {
+		t.Fatalf("Parse([sync]) error: %v", err)
+	}
+	if !opts.Sync {
+		t.Error("Parse([sync]) Sync = false, want true")
+	}
+}
+
+// TestParseSubcommandPriority verifies that subcommands take priority over flags.
+// When "remote" or "sync" is first argument, it should be treated as subcommand.
+func TestParseSubcommandPriority(t *testing.T) {
+	// "ttt remote <url>" should set RemoteURL, not be confused with flags
+	opts, err := Parse([]string{"remote", "https://example.com/repo.git"})
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+	if opts.RemoteURL != "https://example.com/repo.git" {
+		t.Errorf("RemoteURL = %q, want %q", opts.RemoteURL, "https://example.com/repo.git")
+	}
+	if opts.Sync {
+		t.Error("Sync should be false for remote command")
 	}
 }
 

@@ -25,12 +25,32 @@ I was impressed by aeph's approach of bringing the experience to the command lin
 
 ## Installation
 
+### Using go install (Recommended)
+
+```bash
+go install github.com/yostos/tiny-task-tool@latest
+```
+
+Make sure `$GOPATH/bin` or `$HOME/go/bin` is in your PATH.
+
+### Using Homebrew (macOS / Linux)
+
+```bash
+brew install yostos/tap/ttt
+```
+
 ### From Source
 
 ```bash
 git clone https://github.com/yostos/tiny-task-tool.git
 cd tiny-task-tool
 make install
+```
+
+By default, `make install` installs to `$GOPATH/bin` or `$HOME/go/bin`. You can specify a custom directory:
+
+```bash
+make install PREFIX=/usr/local
 ```
 
 ### Requirements
@@ -45,6 +65,8 @@ make install
 ```bash
 ttt                    # Launch TUI
 ttt -t "buy milk"      # Add task quickly
+ttt remote <url>       # Set remote repository
+ttt sync               # Sync with remote (pull → commit → push)
 ttt --help             # Show help
 ttt --version          # Show version
 ```
@@ -155,6 +177,23 @@ ttt automatically manages version control:
 - Initializes a git repository in the working directory
 - Auto-commits changes after edits, archive operations, and task additions
 - Can be disabled with `git.auto_commit = false` in config
+
+### Remote Sync
+
+You can sync your tasks with a remote repository:
+
+```bash
+# Set remote repository (once)
+ttt remote https://github.com/username/my-tasks.git
+
+# Sync with remote
+ttt sync
+```
+
+The `ttt sync` command performs:
+1. `git pull` from remote (skipped on first sync)
+2. Auto-commit any uncommitted changes
+3. `git push` to remote
 
 ## License
 
