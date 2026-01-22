@@ -22,7 +22,15 @@ Hierarchical task support.
 
 ---
 
-## v0.3.0 (In Progress)
+## v0.3.1 (Released)
+
+Bug fix release.
+
+- [x] Translate HELP dialog from Japanese to English
+
+---
+
+## v0.3.0 (Released)
 
 Git sync functionality and public beta preparation.
 
@@ -36,11 +44,11 @@ Git sync functionality and public beta preparation.
 
 ### Public Beta Preparation
 
-- [ ] `go install github.com/yostos/tiny-task-tool@latest` support
-- [ ] Makefile improvements (go install / PREFIX variable support)
-- [ ] Homebrew formula creation (`brew install yostos/tap/ttt`)
-- [ ] Document translation to English (except TODO.md)
-- [ ] Add installation instructions to README.md
+- [x] `go install github.com/yostos/tiny-task-tool@latest` support
+- [x] Makefile improvements (go install / PREFIX variable support)
+- [x] Homebrew formula creation (`brew install yostos/tap/ttt`)
+- [x] Document translation to English (except TODO.md)
+- [x] Add installation instructions to README.md
 
 ---
 
