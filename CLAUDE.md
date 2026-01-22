@@ -50,7 +50,7 @@ The application follows the Elm Architecture pattern:
 - Multiple file support
 - In-app editing
 - Task completion toggle (use external editor)
-- Markdown rendering
+- Custom Markdown rendering implementation (library usage is acceptable)
 - Search/filter
 - Tags/metadata
 - Cloud sync
@@ -78,22 +78,22 @@ Completed tasks are archived to `archive.md` after a configurable delay period.
 
 ## Git Branch Strategy
 
-GitHub Flow を採用：
+Adopting GitHub Flow:
 
 ```
-main (常にリリース可能)
-  ├── feature/xxx    # 機能追加
-  ├── fix/xxx        # バグ修正
-  └── docs/xxx       # ドキュメント更新
+main (always releasable)
+  ├── feature/xxx    # Feature additions
+  ├── fix/xxx        # Bug fixes
+  └── docs/xxx       # Documentation updates
 ```
 
-**ルール：**
-- `main` は常にリリース可能な状態を維持
-- 作業は必ずブランチを切って行う
-- 完了したらmainにsquash merge
-- バージョンはタグで管理（`v0.1.0` 等）
+**Rules:**
+- `main` is always kept in a releasable state
+- Work is always done on a branch
+- Squash merge to main when complete
+- Versions are managed with tags (`v0.1.0`, etc.)
 
-**GitHub CLI (gh) が使用可能：**
+**GitHub CLI (gh) is available:**
 ```bash
 gh pr create --title "Add feature" --body "Description"
 gh pr list
@@ -104,23 +104,23 @@ gh release create v0.1.0 --notes "Release notes"
 
 ### Bug Fix Workflow (Issue-Driven)
 
-バグ修正はGitHub Issueを起点として行う：
+Bug fixes are done starting from GitHub Issues:
 
-1. **Issue作成**: バグを発見したら `gh issue create` でIssue作成
-2. **ブランチ作成**: `fix/issue-番号` ブランチを作成
-3. **修正＆テスト**: TDDで修正、`go test ./...` と `golangci-lint run` をパス
-4. **ユーザー確認**: 修正内容をユーザーが検証
-5. **PR作成**: `gh pr create` でPull Request作成
-6. **マージ**: GitHub上でmainにsquash merge
+1. **Create Issue**: When a bug is found, create an issue with `gh issue create`
+2. **Create Branch**: Create a `fix/issue-N` branch
+3. **Fix & Test**: Fix using TDD, pass `go test ./...` and `golangci-lint run`
+4. **User Verification**: User verifies the fix
+5. **Create PR**: Create Pull Request with `gh pr create`
+6. **Merge**: Squash merge to main on GitHub
 
 ```bash
-# 例: Issue #1 のバグ修正
+# Example: Fixing Issue #1
 gh issue create --title "Bug: ..." --body "Description"
 git checkout -b fix/issue-1
-# ... 修正作業 ...
+# ... fix work ...
 go test ./... && golangci-lint run
 gh pr create --title "Fix #1: ..." --body "Closes #1"
-# GitHub上でマージ
+# Merge on GitHub
 ```
 
 ## Development Guidelines (MANDATORY)
@@ -184,7 +184,7 @@ func TestExpandPath(t *testing.T) { ... }              // What ExpandPath() does
 2. **Test comments should reference specification**
    ```go
    // TestConfigPath verifies that ConfigPath() returns ~/.config/ttt/config.toml.
-   // Spec: docs/specification.md "設定ファイル仕様" section
+   // Spec: docs/specification.md "Configuration File Specification" section
    func TestConfigPath(t *testing.T) {
        expected := filepath.Join(home, ".config", "ttt", "config.toml")
        // Exact match, not partial match
@@ -215,4 +215,10 @@ func TestExpandPath(t *testing.T) { ... }              // What ExpandPath() does
 - `docs/concept.md` - Vision and design philosophy (immutable)
 - `docs/specification.md` - Functional specifications (mutable)
 - `docs/architecture.md` - Technology decisions with rationale (mutable)
+- `docs/roadmap.md` - Version plans and future features (mutable)
 - `docs/TODO.md` - Progress tracking
+
+### Documentation Format Rules
+
+- **Updated date format**: `Updated: YYYY-MM-DD.` (with trailing period)
+  - Example: `Updated: 2026-01-22.`

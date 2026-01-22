@@ -12,6 +12,7 @@ import (
 
 	"github.com/yostos/tiny-task-tool/internal/cli"
 	"github.com/yostos/tiny-task-tool/internal/config"
+	"github.com/yostos/tiny-task-tool/internal/git"
 	"github.com/yostos/tiny-task-tool/internal/tui"
 )
 
@@ -47,6 +48,15 @@ func run() error {
 		return err
 	}
 
+	// Handle subcommands
+	if opts.RemoteURL != "" {
+		return setRemote(cfg, opts.RemoteURL)
+	}
+
+	if opts.Sync {
+		return syncTasks(cfg)
+	}
+
 	if opts.Task != "" {
 		return addTask(cfg, opts.Task)
 	}
@@ -68,6 +78,10 @@ func ensureWorkingDir(cfg *config.Config) error {
 
 		if err := initGitRepo(dir); err != nil {
 			return fmt.Errorf("failed to initialize git repository: %w", err)
+		}
+
+		if err := ensureRepoFiles(dir); err != nil {
+			return fmt.Errorf("failed to create repository files: %w", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to access working directory: %w", err)
@@ -104,6 +118,83 @@ func ensureGitRepo(dir string) error {
 	if _, err := os.Stat(gitDir); os.IsNotExist(err) {
 		return initGitRepo(dir)
 	}
+	return nil
+}
+
+func ensureRepoFiles(dir string) error {
+	// Create README.md if not exists
+	readmePath := filepath.Join(dir, "README.md")
+	if _, err := os.Stat(readmePath); os.IsNotExist(err) {
+		readme := fmt.Sprintf(`# My Tasks
+
+This repository contains task files managed by [ttt (Tiny Task Tool)](https://github.com/yostos/tiny-task-tool).
+
+## Files
+
+- `+"`tasks.md`"+` - Current tasks
+- `+"`archive.md`"+` - Archived completed tasks
+
+## Quick Start
+
+`+"```"+`bash
+ttt                    # Launch TUI
+ttt -t "Buy milk"      # Add a task
+ttt sync               # Sync with remote
+`+"```"+`
+
+For more information, visit: https://github.com/yostos/tiny-task-tool
+
+---
+Created by ttt %s on %s
+`, cli.Version, time.Now().Format("2006-01-02"))
+
+		if err := os.WriteFile(readmePath, []byte(readme), 0644); err != nil {
+			return fmt.Errorf("failed to create README.md: %w", err)
+		}
+	}
+
+	// Create .gitignore if not exists
+	gitignorePath := filepath.Join(dir, ".gitignore")
+	if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
+		gitignore := `# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# Vim
+*.swp
+*.swo
+.*.swp
+
+# Emacs
+*~
+\#*\#
+.#*
+
+# VS Code
+.vscode/
+
+# Sublime Text
+*.sublime-workspace
+
+# nano
+.*.swp
+`
+		if err := os.WriteFile(gitignorePath, []byte(gitignore), 0644); err != nil {
+			return fmt.Errorf("failed to create .gitignore: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -192,4 +283,37 @@ func gitCommit(cfg *config.Config, message string) error {
 	commitCmd := exec.Command("git", "commit", "-m", commitMsg)
 	commitCmd.Dir = dir
 	return commitCmd.Run()
+}
+
+func setRemote(cfg *config.Config, url string) error {
+	dir, err := cfg.WorkingDir()
+	if err != nil {
+		return fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	// Ensure README.md and .gitignore exist before setting remote
+	if err := ensureRepoFiles(dir); err != nil {
+		return fmt.Errorf("failed to create repository files: %w", err)
+	}
+
+	if err := git.SetRemote(dir, url); err != nil {
+		return err
+	}
+
+	fmt.Printf("Remote set to: %s\n", url)
+	return nil
+}
+
+func syncTasks(cfg *config.Config) error {
+	dir, err := cfg.WorkingDir()
+	if err != nil {
+		return fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	if err := git.Sync(dir); err != nil {
+		return err
+	}
+
+	fmt.Println("Sync completed successfully.")
+	return nil
 }

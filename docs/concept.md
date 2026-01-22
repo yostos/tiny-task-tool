@@ -1,169 +1,169 @@
-# ttt (Tiny Task Tool) - プロジェクトコンセプト
+# ttt (Tiny Task Tool) - Project Concept
 
-Updated: 2026-01-18
+Updated: 2026-01-22.
 
-## この文書について
+## About This Document
 
-この文書は ttt (Tiny Task Tool) の構想と設計思想を記述します。
-具体的な仕様については [specification.md](specification.md) を参照してください。
+This document describes the vision and design philosophy of ttt (Tiny Task Tool).
+For detailed specifications, see [specification.md](specification.md).
 
-## ビジョンと動機
+## Vision and Motivation
 
-### なぜ作るのか
+### Why Build This
 
-ターミナル環境で作業していると、頭の中の雑念やタスクを書き出したくなる瞬間があります。
-コードを書いている最中に「あれもやらなきゃ」と思いついたり、複数のタスクが頭の中で絡み合ったりします。
+When working in the terminal, there are moments when you want to write down the clutter in your head—random thoughts and tasks.
+While coding, you might think "I need to do that too," or multiple tasks get tangled in your mind.
 
-そんな時、物理的な紙とペンがあれば書き出せるのですが、ターミナルから手を離してペンを取るのは面倒です。
-かといって、既存のTodoアプリは機能が多すぎて、かえって思考を邪魔してしまいます。
+In such moments, physical paper and pen would let you write things down, but reaching for a pen while working in the terminal is inconvenient.
+On the other hand, existing todo apps have too many features and end up interrupting your thinking instead.
 
-欲しいのは「デジタルの一枚の紙」です。
-ターミナルからコマンド一つで開ける、シンプルな書き捨ての場所です。
+What I want is a "digital sheet of paper."
+A simple scratch space that opens with a single command from the terminal.
 
-### 既存ツールの課題
+### Problems with Existing Tools
 
-#### 1. Todoアプリの問題点
+#### 1. Issues with Todo Apps
 
-多くのTodoアプリは、プロジェクト管理、優先度設定、期限管理、タグ付け、カテゴリ分類など、機能が豊富すぎます。
-「どのプロジェクトに入れよう」「優先度は？」「タグは何にしよう」と考えているうちに、書きたかったことを忘れてしまいます。
+Many todo apps are feature-rich: project management, priority settings, deadlines, tags, categories, and more.
+While thinking "which project should this go in?" "what priority?" "what tag?", you forget what you wanted to write.
 
-メモを管理するために脳のリソースを使うのは本末転倒です。
+Using brain resources to manage notes defeats the purpose.
 
-#### 2. Markdownエディタの問題点
+#### 2. Issues with Markdown Editors
 
-Obsidian、Notion、Joplinなどは強力ですが、これらも「ノートを管理する」ことに重きを置いています。
-ファイル名をどうするか、どのフォルダに保存するか、リンクをどう張るかなど考える必要があります。
+Obsidian, Notion, Joplin, and similar tools are powerful, but they also focus on "managing notes."
+You need to think about what to name the file, which folder to save it in, how to link things.
 
-ただ「今日のことを走り書きしたい」だけなのに、考えることが多すぎます。
+When all you want is to "jot down today's thoughts," there's too much to think about.
 
-#### 3. ターミナルから離れる問題
+#### 3. The Problem of Leaving the Terminal
 
-既存の多くのツールはGUIアプリです。
-ターミナルで作業している時、別のウィンドウを開いてアプリを起動し、書いて、また戻ってきます。
-この「文脈の切り替え」が思考の流れを断ち切ってしまいます。
+Many existing tools are GUI applications.
+When working in the terminal, you have to open another window, launch an app, write, then come back.
+This "context switch" breaks the flow of thought.
 
-#### 4. CLI系類似ツールの問題点
+#### 4. Issues with Similar CLI Tools
 
-ターミナル向けのMarkdownツールも存在しますが、ファイル選択や複数ファイル対応など、機能が増えるにつれて「一枚の紙」というシンプルさから離れていく傾向があります。
+Terminal-based Markdown tools exist, but as features like file selection and multiple file support are added, they tend to drift away from the simplicity of "one sheet of paper."
 
-便利さを追求するあまり、選択肢が増え、結局は「どのファイルに書こう」という判断を迫られます。
+In pursuing convenience, options multiply, and eventually you're forced to decide "which file should I write in?"
 
-### 実現したい体験
+### The Experience I Want to Achieve
 
-理想は、物理的なメモ用紙のシンプルさです。
+The ideal is the simplicity of physical memo paper.
 
-机の上に一枚の紙があります。思いついたことをサッと書きます。
-タスクが終わったら線を引いて消します。紙が埋まったら捨てます。
-それだけです。
+There's a sheet of paper on your desk. You quickly write down what comes to mind.
+When a task is done, you cross it out. When the paper fills up, you throw it away.
+That's it.
 
-これをターミナルの中で再現したいのです。
+I want to recreate this in the terminal.
 
-朝、ターミナルを開きます。コマンド一つで今日の紙が目の前に現れます。
-タスクを眺め、完了したものにチェックを入れます。
-新しいことを書きたくなったら、慣れたエディタ（VimやNeovimなど）で書きます。
-完了したタスクは、コマンド一つでアーカイブに流れていきます。
+In the morning, you open the terminal. With one command, today's paper appears.
+You look at your tasks and check off completed ones.
+When you want to write something new, you use your familiar editor (Vim, Neovim, etc.).
+Completed tasks flow into the archive with a single command.
 
-思考の整理に必要な機能だけがあり、それ以外は何もありません。
-ターミナルから離れずに、静かに思考を整理できる場所です。
+Only the features needed for organizing thoughts exist—nothing more.
+A quiet place to organize your thinking without leaving the terminal.
 
-## 設計哲学
+## Design Philosophy
 
-### 核心的な考え方
+### Core Ideas
 
-- 「一枚の紙」という制約
-  - 物理的なメモ用紙は一枚です。複数の紙を広げて管理したりしません。だからこそシンプルで、迷いがありません。
-  - このツールも同じです。ファイルは常に一つです。
-    「どのファイルに書こう」という選択を強制的に排除します。
-- 「今」に集中する
-  - 頭の中のノイズ—アイデア、タスク、心配事—を書き出す場所です。
-  - 思いついた瞬間にすぐ書き留める。それが目的です。
-  - 過去のメモを検索したり、整理したりする機能は要りません。
-  - 書くことで思考が整理され、心が軽くなる。
-- 「ノード指向」の管理
-  - 人はインデントされた行の塊を、一つのまとまりとして認識します。
-  - このツールは行単位ではなく、ノード（親子関係を含む構造）単位でタスクを扱います。
-  - 親タスクを完了すれば子も完了し、アーカイブすれば子も一緒に移動します。
-  - 実装は複雑になりますが、人間の感覚に寄り添うことを優先します。
-- Unix哲学に従う
-  - 「一つのことをうまくやる」です。
-  - このツールは「Markdownの閲覧」と「タスクのアーカイブ」だけをやります。
-  - 編集は外部エディタに任せます。検索はgrepに任せます。バージョン管理はgitに任せます。
-  - すべてを一つのツールで解決しようとしません。
+- The "One Sheet of Paper" Constraint
+  - Physical memo paper is one sheet. You don't spread out multiple papers to manage them. That's why it's simple, with no hesitation.
+  - This tool is the same. There's always one file.
+    The choice of "which file should I write in?" is forcibly eliminated.
+- Focus on "Now"
+  - A place to write out the noise in your head—ideas, tasks, worries.
+  - Capture thoughts the moment they occur. That's the purpose.
+  - Features to search or organize past notes are unnecessary.
+  - Writing organizes your thoughts and lightens your mind.
+- "Node-Oriented" Management
+  - People perceive indented blocks of lines as a single unit.
+  - This tool handles tasks not as lines, but as nodes (structures including parent-child relationships).
+  - Completing a parent completes its children; archiving moves children together.
+  - Implementation becomes complex, but aligning with human intuition takes priority.
+- Follow Unix Philosophy
+  - "Do one thing well."
+  - This tool only does "viewing Markdown" and "archiving tasks."
+  - Editing is left to external editors. Searching is left to grep. Version control is left to git.
+  - We don't try to solve everything in one tool.
 
-### 最も大切にする価値
+### Most Important Values
 
-1. シンプルさ：機能を足すことより、削ることに価値があります。
-2. 摩擦の排除：起動も終了も一瞬で、思考を邪魔しません。
-3. テキスト指向。Markdownのシンプルな記法に限定する。
-4. 慣れたツールとの共存：編集はユーザーの好きなエディタで行います。
-5. 可能な限りシンプルなキー操作を目指します。
-6. エディタやキー操作は設定ファイルでカスタマイズ可能とします。
+1. Simplicity: Removing features has more value than adding them.
+2. Eliminating friction: Startup and exit are instant, never interrupting thought.
+3. Text-oriented: Limited to simple Markdown notation.
+4. Coexistence with familiar tools: Editing is done with the user's preferred editor.
+5. Aim for the simplest possible key operations.
+6. Editor and key operations are customizable via configuration file.
 
-### やること
+### What We Do
 
-- Markdownファイルの閲覧。
-- 新規完了タスク（`- [x]`）の検出と`@done(日付)`自動追加
-- 完了タスクのアーカイブ
-- 外部エディタの呼び出し
+- View Markdown files.
+- Detect newly completed tasks (`- [x]`) and automatically add `@done(date)`
+- Archive completed tasks
+- Invoke external editor
 
-### やらないこと
+### What We Don't Do
 
-- ファイル指定（コマンドライン引数でのファイル指定は行わない。「どのファイルを開くか」という選択を排除する）
-- 複数ファイル管理（一枚の紙の原則に反する）
-- ファイル内編集（外部エディタに任せる）
-- タスクの完了/未完了切り替え（外部エディタに任せる）
-- Markdownレンダリング（`#`は`#`のまま見える方が思考の整理に良い）
-- リッチな機能追加（検索、タグ、メタデータ等）
-- クラウド同期やAI機能
+- File specification (no file specification via command-line arguments; eliminate the choice of "which file to open")
+- Multiple file management (violates the one sheet of paper principle)
+- In-file editing (leave to external editor)
+- Toggle task completion (leave to external editor)
+- Custom Markdown rendering implementation (library usage is acceptable; low development priority)
+- Rich feature additions (search, tags, metadata, etc.)
+- Cloud sync or AI features
 
-### 意図的に除外するもの
+### Intentionally Excluded
 
-これらは設計思想に基づき、永久に実装しません。
+These will never be implemented, based on design philosophy.
 
-- コマンドライン引数でのファイル指定
-- 複数ファイル対応
-- ファイル内編集機能
-- タスクの完了/未完了切り替え（エディタに任せる）
-- Markdownレンダリング
-- 検索・フィルタ機能
-- タグやメタデータ
-- クラウド同期
-- AI機能
+- File specification via command-line arguments
+- Multiple file support
+- In-file editing functionality
+- Task completion toggle (leave to editor)
+- Custom Markdown rendering implementation (library usage is acceptable)
+- Search/filter functionality
+- Tags or metadata
+- Cloud sync
+- AI features
 
-### トレードオフの判断基準
+### Trade-off Decision Criteria
 
-機能追加の提案があった時、以下を自問する。
+When a feature addition is proposed, ask yourself:
 
-- これは「一枚の紙」の体験を壊さないか？
-- これは外部ツールに任せられないか？
-- これは本当に「今日」のために必要か？
+- Does this break the "one sheet of paper" experience?
+- Can this be left to external tools?
+- Is this really needed for "today"?
 
-迷ったら、削る方を選ぶ。
+When in doubt, choose to remove.
 
-## ターゲットユーザー
+## Target Users
 
-### 想定するユーザー
+### Expected Users
 
-- ターミナルで作業することが多い開発者、ライター、研究者
-- VimやNeovim、Visual Studio Codeなど、好みのエディタを持っている
-- 「シンプルなメモ用紙」の価値を理解している
-- 多機能なTodoアプリやノートアプリに疲れている
+- Developers, writers, researchers who often work in the terminal
+- Have a preferred editor like Vim, Neovim, Visual Studio Code
+- Understand the value of a "simple memo pad"
+- Tired of feature-rich todo apps and note apps
 
-## このツールの立ち位置
+## Positioning of This Tool
 
-### 他のツールとの比較
+### Comparison with Other Tools
 
-| 観点         | 一般的なTodoアプリ                   | Markdownノートアプリ           | このツール             |
-| ------------ | ------------------------------------ | ------------------------------ | ---------------------- |
-| 機能の豊富さ | プロジェクト管理、タグ、期限など多数 | リンク、検索、フォルダ管理など | 閲覧とアーカイブのみ   |
-| ファイル管理 | アプリ内で管理                       | 複数ファイル・フォルダ         | 一つのMarkdownファイル |
-| 編集環境     | 専用エディタ                         | 専用エディタ                   | 外部エディタ（Vim等）  |
-| 利用環境     | GUI（Web/デスクトップ）              | GUI（Web/デスクトップ）        | TUI（ターミナル）      |
-| 学習コスト   | 高い（機能が多い）                   | 中〜高い                       | 低い（キー数個だけ）   |
+| Aspect | Typical Todo Apps | Markdown Note Apps | This Tool |
+| --- | --- | --- | --- |
+| Feature richness | Many: project mgmt, tags, deadlines | Links, search, folder mgmt | Only viewing and archiving |
+| File management | Managed within app | Multiple files/folders | One Markdown file |
+| Editing environment | Dedicated editor | Dedicated editor | External editor (Vim, etc.) |
+| Usage environment | GUI (Web/Desktop) | GUI (Web/Desktop) | TUI (Terminal) |
+| Learning cost | High (many features) | Medium to high | Low (just a few keys) |
 
-### このツールを選ぶ理由
+### Reasons to Choose This Tool
 
-- ターミナルから離れたくない：コマンド一つで開けます。
-- 慣れたエディタで書きたい：愛用エディタならばプラグインもキーバインドもそのまま使えます。
-- シンプルさが欲しい：機能が少ないことが価値です。
-- プレーンテキストが良い：Markdownファイルだから、どんなツールでも読めます。
+- Don't want to leave the terminal: Opens with one command.
+- Want to write with a familiar editor: Your plugins and keybindings work as-is.
+- Want simplicity: Having fewer features is the value.
+- Prefer plain text: It's a Markdown file, readable by any tool.

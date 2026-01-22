@@ -1,257 +1,259 @@
-# ttt(Tiny Task Tool) - 仕様書
+# ttt (Tiny Task Tool) - Specification
 
-Updated: 2026-01-18
+Updated: 2026-01-22.
 
-## この文書について
+## About This Document
 
-この文書は ttt (Tiny Task Tool) の機能仕様を定義します。
+This document defines the functional specifications of ttt (Tiny Task Tool).
 
-- 構想・設計思想については [concept.md](concept.md) を参照
-- 技術選定・アーキテクチャについては [architecture.md](architecture.md) を参照
+- For vision and design philosophy, see [concept.md](concept.md)
+- For technology choices and architecture, see [architecture.md](architecture.md)
 
-## プロジェクト名
+## Project Name
 
 **ttt** (Tiny Task Tool)
 
-- 短く覚えやすいです。
-- 目的が明確です。
-- コマンドとして打ちやすいです。
+- Short and memorable.
+- Clear purpose.
+- Easy to type as a command.
 
 ```bash
-ttt                                    # TUIを起動
-ttt -t buy kitchen paper and wasabi    # タスクを追加（TUIは起動しない）
-ttt --task "buy kitchen paper"         # 引用符付きも可
-ttt --help                             # ヘルプ表示
-ttt -h                                 # ヘルプ表示
-ttt --version                          # バージョン表示
-ttt -v                                 # バージョン表示
+ttt                                    # Launch TUI
+ttt -t buy kitchen paper and wasabi    # Add task (no TUI)
+ttt --task "buy kitchen paper"         # Add task with quotes
+ttt remote <url>                       # Register remote repository (v0.3.0)
+ttt sync                               # Manual sync with remote (v0.3.0)
+ttt --help                             # Show help
+ttt -h                                 # Show help
+ttt --version                          # Show version
+ttt -v                                 # Show version
 ```
 
-ファイルの指定は行いません。「一枚の紙」の原則に基づき、開くファイルは設定ファイルで指定された固定の1ファイルのみです。
+File specification is not supported. Based on the "one sheet of paper" principle, the file to open is a single fixed file specified in the configuration.
 
-`-t`（`--task`）オプションでタスクを追加できます。引数がある場合はタスクとしてメインファイルに追記し、TUIは起動しません。ターミナルから離れずにサッとタスクを追記できます。
+The `-t` (`--task`) option allows adding tasks. If an argument is provided, it's appended as a task to the main file, and the TUI is not launched. This lets you quickly add tasks without leaving the terminal.
 
-## ユースケース
+## Use Cases
 
-### 典型的な一日の流れ
+### Typical Daily Workflow
 
-#### 1. 朝のルーティン
-
-```bash
-ttt
-```
-
-- 昨日の残タスクを確認します。
-- `archive.auto = true` なら、設定日数経過した完了タスクが自動アーカイブされます。
-- `a`キーでいつでも手動アーカイブを実行できます。
-- `e`でエディタを開き、今日のタスクを書き足します。
-- エディタを閉じてtttに戻ります。
-- tttに戻ると、完了したタスクには @done(日付)が自動追加されます。
-- `q`で終了します。
-
-#### 2. 作業中
+#### 1. Morning Routine
 
 ```bash
 ttt
 ```
 
-- タスクを眺めて次の行動を決めます。
-- タスクが終わったら`e`でエディタを開いてチェックします。
-- 思いついたことを書き足します。
+- Review yesterday's remaining tasks.
+- With `archive.auto = true`, completed tasks past the configured delay are automatically archived.
+- Press `a` to manually archive at any time.
+- Press `e` to open the editor and add today's tasks.
+- Close the editor to return to ttt.
+- Upon returning, completed tasks automatically get `@done(date)` added.
+- Press `q` to exit.
 
-#### 3. 一日の終わり
+#### 2. During Work
 
 ```bash
 ttt
 ```
 
-- 今日完了したことを確認します。
-- `e`でエディタを開き、完了したタスクを`- [ ]`から`- [x]`に変更します。
+- Look at tasks and decide next action.
+- When a task is done, press `e` to open editor and check it off.
+- Add new thoughts as they come.
 
-## TaskPaper形式の採用
+#### 3. End of Day
 
-### 完了日の記録
+```bash
+ttt
+```
 
-タスク完了時に、TaskPaper形式で日付を記録します。
+- Review what was completed today.
+- Press `e` to open editor and change completed tasks from `- [ ]` to `- [x]`.
+
+## TaskPaper Format Adoption
+
+### Recording Completion Dates
+
+When a task is completed, the date is recorded in TaskPaper format.
 
 ```markdown
-- [ ] 未完了タスク
-- [x] 完了タスク @done(2026-01-18)
-- [x] 古い完了タスク @done(2026-01-10)
+- [ ] Incomplete task
+- [x] Completed task @done(2026-01-18)
+- [x] Old completed task @done(2026-01-10)
 ```
 
-### アーカイブのタイミング
+### Archive Timing
 
-アーカイブの実行タイミング（詳細は「設定ファイル仕様」セクションを参照）：
+Archive execution timing (see "Configuration File Specification" section for details):
 
-- **`a`キー**: いつでも手動でアーカイブを実行可能
-- **起動時自動実行**: `archive.auto = true` の場合、起動時に自動実行
-- **エディタから戻った時**: 自動アーカイブは実行しない（ファイル再読み込みのみ）
+- **`a` key**: Manually execute archive at any time
+- **Auto-execute on startup**: If `archive.auto = true`, auto-execute on startup
+- **After returning from editor**: Auto-archive is not executed (only file reload)
 
-アーカイブ対象は `delay_days` で指定した日数が経過した完了タスクのみです。これにより、完了したタスクをしばらく見える場所に残せます。
+Only completed tasks that have passed the `delay_days` period are archived. This allows completed tasks to remain visible for a while.
 
-### アーカイブの仕組み
+### Archive Mechanism
 
-完了したタスクはアーカイブファイル（`archive.md`）に移動します。メインファイルからは削除されるため、起動直後の画面に表示されなくなります。
+Completed tasks are moved to the archive file (`archive.md`). They are removed from the main file, so they won't appear on screen at startup.
 
-**アーカイブファイルの構成**
+**Archive File Structure**
 
-完了日ごとに `## YYYY-MM-DD` のセクションを作成し、その日付に完了したタスクをまとめます。
+Sections with `## YYYY-MM-DD` headers are created for each completion date, grouping tasks completed on that date.
 
 ```markdown
 ## 2026-01-20
 
-- [x] タスクA @done(2026-01-20)
-- [x] タスクB @done(2026-01-20)
+- [x] Task A @done(2026-01-20)
+- [x] Task B @done(2026-01-20)
 
 ## 2026-01-19
 
-- [x] タスクC @done(2026-01-19)
+- [x] Task C @done(2026-01-19)
 ```
 
-**特徴**
+**Characteristics**
 
-- メインの`ttt`で開くファイルには完了日から一定期間経過したタスクは表示されない
-- 履歴が必要な場合は`archive.md`を別途確認可能
-- プレーンテキストなので、どのツールでも読める
-- Gitで完全な履歴を管理できる
+- The main file opened by `ttt` doesn't show tasks past the delay period from completion
+- If history is needed, `archive.md` can be viewed separately
+- Plain text, readable by any tool
+- Git provides complete history management
 
-### 階層タスク（親子関係）
+### Hierarchical Tasks (Parent-Child Relationships)
 
-Markdownのインデントによる階層構造をサポートします。
+Markdown indentation-based hierarchy is supported.
 
 ```markdown
-- [ ] 親タスク
-  - [ ] 子タスク1
-  - [ ] 子タスク2
-    - [ ] 孫タスク
+- [ ] Parent task
+  - [ ] Child task 1
+  - [ ] Child task 2
+    - [ ] Grandchild task
 ```
 
-**インデント規則:**
-- 2スペースで1階層
-- タブは2スペースとして扱う
+**Indentation Rules:**
+- 2 spaces = 1 level
+- Tabs are treated as 2 spaces
 
-**親タスク完了時の動作:**
+**Behavior When Parent Task is Completed:**
 
-親タスクを完了（`- [x]`）にすると、すべての子タスクも自動的に完了になります。
+When a parent task is completed (`- [x]`), all child tasks are automatically completed as well.
 
 ```markdown
-# 編集前
-- [x] 親タスク
-  - [ ] 子タスク1
-  - [ ] 子タスク2
+# Before editing
+- [x] Parent task
+  - [ ] Child task 1
+  - [ ] Child task 2
 
-# tttが処理後
-- [x] 親タスク @done(2026-01-19)
-  - [x] 子タスク1 @done(2026-01-19)
-  - [x] 子タスク2 @done(2026-01-19)
+# After ttt processing
+- [x] Parent task @done(2026-01-19)
+  - [x] Child task 1 @done(2026-01-19)
+  - [x] Child task 2 @done(2026-01-19)
 ```
 
-**アーカイブ時の動作:**
+**Behavior During Archive:**
 
-親タスクがアーカイブ対象になると、すべての子タスク・子ノード（非タスク行を含む）も一緒にアーカイブされます。
-インデント構造は保持されます。
+When a parent task becomes archivable, all child tasks and child nodes (including non-task lines) are archived together.
+Indentation structure is preserved.
 
-**重要なルール:**
-- **親が未完了の場合**: 子タスク・子ノードが完了していても、アーカイブされません
-- **親が完了してもdelay_days未満の場合**: 子タスク・子ノードもアーカイブされません
-- **グループ化は親の日付で**: archive.mdのセクション見出し（## YYYY-MM-DD）には親タスクの完了日を使用します。子タスクの@doneタグはそのまま保持されますが、表示は親の日付セクションに含まれます
-- **非タスク行（箇条書き）**: `- テキスト` 形式の子ノード（チェックボックスなし）は完了済みとして扱い、親と一緒にアーカイブされます
+**Important Rules:**
+- **If parent is incomplete**: Child tasks/nodes are not archived even if completed
+- **If parent is completed but less than delay_days**: Child tasks/nodes are not archived
+- **Grouping uses parent's date**: The archive.md section heading (`## YYYY-MM-DD`) uses the parent task's completion date. Child task @done tags are preserved, but displayed under the parent's date section
+- **Non-task lines (bullets)**: `- text` format child nodes (without checkbox) are treated as completed and archived with parent
 
 ```markdown
 # archive.md
 ## 2026-01-19
 
-- [x] 親タスク @done(2026-01-19)
-  - [x] 子タスク1 @done(2026-01-18)  ← 子の日付は保持されるが、親の日付セクションに含まれる
-  - メモ行                           ← 非タスク行も親と一緒にアーカイブ
+- [x] Parent task @done(2026-01-19)
+  - [x] Child task 1 @done(2026-01-18)  ← Child's date preserved but under parent's section
+  - Memo line                           ← Non-task line archived with parent
 ```
 
-## 設定ファイル仕様
+## Configuration File Specification
 
-### 配置場所
+### Location
 
-XDG Base Directory仕様に準拠：
+Follows XDG Base Directory specification:
 
-1. 環境変数`XDG_CONFIG_HOME`が設定されている場合 → `$XDG_CONFIG_HOME/ttt/config.toml`
-2. 設定されていない場合 → `os.UserConfigDir()/ttt/config.toml`
+1. If `XDG_CONFIG_HOME` environment variable is set → `$XDG_CONFIG_HOME/ttt/config.toml`
+2. If not set → `os.UserConfigDir()/ttt/config.toml`
 
 ```
-# 例: Linux（XDG_CONFIG_HOME未設定、os.UserConfigDir() = /home/foo/.config）
+# Example: Linux (XDG_CONFIG_HOME not set, os.UserConfigDir() = /home/foo/.config)
 /home/foo/.config/ttt/config.toml
 
-# 例: XDG_CONFIG_HOME=/custom/config の場合
+# Example: XDG_CONFIG_HOME=/custom/config
 /custom/config/ttt/config.toml
 ```
 
-### 自動作成
+### Auto-creation
 
-設定ファイルが存在しない場合、初回起動時にデフォルト値で自動作成します。
-ディレクトリが存在しない場合も自動的に作成します。
+If the configuration file doesn't exist, it's automatically created with default values on first launch.
+If the directory doesn't exist, it's also created automatically.
 
-### 設定ファイルの構成
+### Configuration File Structure
 
 ```toml
 [file]
-# タスクファイルを配置するディレクトリ
+# Directory for task files
 working_dir = "~/.ttt"
-# ファイル名は固定:
-#   - tasks.md (メインファイル)
-#   - archive.md (アーカイブファイル)
+# File names are fixed:
+#   - tasks.md (main file)
+#   - archive.md (archive file)
 
 [archive]
-# 起動時に自動アーカイブを実行するか
+# Execute auto-archive on startup
 auto = false
-# 完了から何日後にアーカイブ対象とするか
+# Days after completion before archiving
 delay_days = 2
 
 [editor]
-# エディタ起動コマンドテンプレート
-# {file} はファイルパスに置換される
-# 省略時は環境変数 $EDITOR を使用（"{file}" を末尾に自動付加）
-# 例: command = "vim {file}"
-# 例: command = "code --wait {file}"
-# 例: command = "emacs -nw {file}"
+# Editor launch command template
+# {file} is replaced with the file path
+# If omitted, uses $EDITOR environment variable (auto-appends "{file}")
+# Example: command = "vim {file}"
+# Example: command = "code --wait {file}"
+# Example: command = "emacs -nw {file}"
 command = "vim {file}"
 
 [keybindings]
-# ↑↓キーの代替キー（複数指定可能）
+# Alternative keys for ↑↓ (multiple can be specified)
 up = ["k", "ctrl+p"]
 down = ["j", "ctrl+n"]
 
-# 先頭/末尾移動
+# Go to top/bottom
 top = ["g", "Home"]
 bottom = ["G", "End"]
 
-# 半画面スクロール
+# Half-page scroll
 half_page_up = ["ctrl+u"]
 half_page_down = ["ctrl+d"]
 
-# 修飾キーの記法:
-#   - ctrl+<key>: Ctrlキー + キー (例: ctrl+n, ctrl+p)
-#   - alt+<key>: Altキー + キー (例: alt+f, alt+b)
-#   - shift+<key>: Shiftキー + キー (例: shift+tab)
-#   - 大文字小文字は区別する（G ≠ g）
-#   - 機能キー: Home, End, PageUp, PageDown など
+# Modifier key notation:
+#   - ctrl+<key>: Ctrl key + key (e.g., ctrl+n, ctrl+p)
+#   - alt+<key>: Alt key + key (e.g., alt+f, alt+b)
+#   - shift+<key>: Shift key + key (e.g., shift+tab)
+#   - Case sensitive (G ≠ g)
+#   - Function keys: Home, End, PageUp, PageDown, etc.
 
 [git]
-# 自動コミット（デフォルト有効）
-# 変更時にバックグラウンドで自動的にgitコミット
+# Auto-commit (enabled by default)
+# Automatically git commit in background on changes
 auto_commit = true
 ```
 
-### デフォルト値
+### Default Values
 
-設定ファイルが存在しない場合、以下のデフォルト値が使用されます：
+When the configuration file doesn't exist, these default values are used:
 
 - `file.working_dir` → `~/.ttt`
-- ファイル名（固定）:
-  - メインファイル: `tasks.md`
-  - アーカイブファイル: `archive.md`
+- File names (fixed):
+  - Main file: `tasks.md`
+  - Archive file: `archive.md`
 - `archive.auto` → `false`
 - `archive.delay_days` → `2`
-- `editor.command` → 環境変数 `$EDITOR` の値 + ` {file}`
-  - `$EDITOR` 未設定の場合: `vi {file}`
+- `editor.command` → Value of `$EDITOR` environment variable + ` {file}`
+  - If `$EDITOR` is not set: `vi {file}`
 - `keybindings.up` → `["k"]`
 - `keybindings.down` → `["j"]`
 - `keybindings.top` → `["g", "Home"]`
@@ -260,66 +262,66 @@ auto_commit = true
 - `keybindings.half_page_down` → `["ctrl+d"]`
 - `git.auto_commit` → `true`
 
-### 設計上の理由
+### Design Rationale
 
-- **ファイル名固定**: 「一枚の紙」の原則を強化し、ファイル選択の複雑さを排除
-- **テンプレート形式**: エディタ固有のオプション（`--wait`, `-nw` など）を柔軟に指定可能
-- **XDG準拠**: Linux/macOSの標準的な設定ファイル配置に従う
+- **Fixed file names**: Reinforces the "one sheet of paper" principle, eliminates file selection complexity
+- **Template format**: Allows flexible specification of editor-specific options (`--wait`, `-nw`, etc.)
+- **XDG compliance**: Follows standard configuration file placement for Linux/macOS
 
-## キーバインド仕様
+## Keybinding Specification
 
-tttはビューア型のTUIツールであり、編集機能は持ちません。シンプルで覚えやすいキーバインドを提供します。
+ttt is a viewer-type TUI tool without editing capabilities. It provides simple, memorable keybindings.
 
-### 固定キーバインド（設定変更不可）
+### Fixed Keybindings (Not Configurable)
 
-以下のキーは固定されており、設定ファイルで変更できません：
+The following keys are fixed and cannot be changed in the configuration file:
 
-| キー | 動作 | 説明 |
-|------|------|------|
-| `↑` | 1行上へスクロール | 常に有効 |
-| `↓` | 1行下へスクロール | 常に有効 |
-| `e` | エディタ起動 | 設定されたエディタでtasks.mdを開く |
-| `a` | アーカイブ実行 | 条件を満たす完了済みタスクをアーカイブ |
-| `r` | 再読み込み | ファイルを再読み込み（エディタ終了後は自動） |
-| `q` | 終了 | tttを終了 |
-| `?` / `h` | ヘルプ表示 | キーバインド一覧をオーバーレイ表示 |
+| Key | Action | Description |
+|-----|--------|-------------|
+| `↑` | Scroll up one line | Always enabled |
+| `↓` | Scroll down one line | Always enabled |
+| `e` | Launch editor | Opens tasks.md in configured editor |
+| `a` | Execute archive | Archives completed tasks meeting criteria |
+| `r` | Reload | Reloads file (automatic after editor exit) |
+| `q` | Quit | Exit ttt |
+| `?` / `h` | Show help | Display keybinding list as overlay |
 
-### 設定可能なキーバインド
+### Configurable Keybindings
 
-以下のキーは設定ファイル (`[keybindings]`) でカスタマイズ可能です：
+The following keys can be customized in the configuration file (`[keybindings]`):
 
-| 動作 | 設定キー | デフォルト値 | 説明 |
-|------|---------|-------------|------|
-| 上スクロール | `up` | `["k"]` | ↑キーの代替 |
-| 下スクロール | `down` | `["j"]` | ↓キーの代替 |
-| 先頭へ移動 | `top` | `["g", "Home"]` | ファイルの最初へ |
-| 末尾へ移動 | `bottom` | `["G", "End"]` | ファイルの最後へ |
-| 半画面上へ | `half_page_up` | `["ctrl+u"]` | |
-| 半画面下へ | `half_page_down` | `["ctrl+d"]` | |
+| Action | Config Key | Default | Description |
+|--------|-----------|---------|-------------|
+| Scroll up | `up` | `["k"]` | Alternative to ↑ key |
+| Scroll down | `down` | `["j"]` | Alternative to ↓ key |
+| Go to top | `top` | `["g", "Home"]` | Go to beginning of file |
+| Go to bottom | `bottom` | `["G", "End"]` | Go to end of file |
+| Half page up | `half_page_up` | `["ctrl+u"]` | |
+| Half page down | `half_page_down` | `["ctrl+d"]` | |
 
-**カスタマイズ例:**
+**Customization Example:**
 
 ```toml
 [keybindings]
-# Emacs風キーバインド
+# Emacs-style keybindings
 up = ["k", "ctrl+p"]
 down = ["j", "ctrl+n"]
 top = ["alt+<", "Home"]
 bottom = ["alt+>", "End"]
 ```
 
-### 設計上の理由
+### Design Rationale
 
-- **最小限の固定キー**: 基本操作（↑↓）と機能キー（e/a/r/q/?/h）のみ固定
-- **柔軟なスクロールキー**: vim/Emacsなど異なるエディタ習慣に対応
-- **less/man風**: 既存のページャーツールと同様の操作感
-- **カーソルなし**: 編集機能を持たないため、カーソル概念は不要
+- **Minimal fixed keys**: Only basic operations (↑↓) and function keys (e/a/r/q/?/h) are fixed
+- **Flexible scroll keys**: Supports different editor habits (vim/Emacs)
+- **less/man-like**: Similar operation feel to existing pager tools
+- **No cursor**: Since there's no editing function, cursor concept is unnecessary
 
-## TUI画面レイアウト
+## TUI Screen Layout
 
-「一枚の紙」のコンセプトに基づき、最小限の情報のみ表示します。
+Based on the "one sheet of paper" concept, only minimal information is displayed.
 
-### 画面構成
+### Screen Structure
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -329,188 +331,332 @@ bottom = ["alt+>", "End"]
 │ - [x] Review PR #123 @done(2026-01-18)          │
 │ - [ ] Write documentation                       │
 │                                                 │
-│ ## Notes                                        │ ← メインエリア
+│ ## Notes                                        │ ← Main area
 │                                                 │
 │ - Remember to check email                       │
 │                                                 │
 ├─────────────────────────────────────────────────┤
-│ ? help | e edit | a archive | q quit   [15/42] │ ← フッター
+│ ? help | e edit | a archive | q quit   [15/42] │ ← Footer
 └─────────────────────────────────────────────────┘
 ```
 
-### 各エリアの詳細
+### Area Details
 
-#### ヘッダー
+#### Header
 
-**なし**。ファイルを意識させないというコンセプトに基づき、ヘッダーは表示しません。
+**None**. Based on the concept of not making users aware of files, no header is displayed.
 
-#### メインエリア
+#### Main Area
 
-- ファイル内容をそのまま表示（Markdownレンダリングなし）
-- スクロール可能
-- 行番号は表示しない
+- Displays file content as-is (no Markdown rendering)
+- Scrollable
+- No line numbers displayed
 
-#### フッター（1行）
+#### Footer (1 line)
 
-**通常表示:**
+**Normal display:**
 ```
 ? help | e edit | a archive | q quit    [15/42] ttt v0.1.0
 ```
 
-- 左側: 主要なキー操作ヒント
-- 右側: スクロール位置 `[現在行/総行数]` とバージョン情報
+- Left side: Key operation hints
+- Right side: Scroll position `[current line/total lines]` and version info
 
-### ステータスメッセージ
+### Status Messages
 
-フッターに一時的なメッセージを表示します（3秒後に通常表示に戻る）。
+Temporary messages are displayed in the footer (returns to normal display after 3 seconds).
 
-**起動時（新規完了タスク検出時）:**
+**On startup (when new completed tasks detected):**
 ```
 3 tasks marked as done                      [1/42]
 ```
-`- [x]`で`@done(日付)`が無いタスクを検出し、自動的に`@done(今日の日付)`を追加した場合に表示。
+Displayed when `- [x]` tasks without `@done(date)` are detected and automatically tagged with `@done(today's date)`.
 
-**アーカイブ実行時:**
+**On archive execution:**
 ```
 Archived 3 tasks                            [1/39]
 ```
 
-**アーカイブ対象がない場合:**
+**When no tasks to archive:**
 ```
 No tasks to archive                         [1/42]
 ```
 
-### ヘルプオーバーレイ
+### Help Overlay
 
-`?` または `h` でヘルプを表示する際は、画面中央にオーバーレイ表示。
-カスタマイズされたキーバインドは動的に反映されます。
+When pressing `?` or `h` to show help, it's displayed as an overlay in the center of the screen.
+Customized keybindings are reflected dynamically.
 
-**デフォルト設定での表示例:**
+**Display example with default settings:**
 
 ```
 ┌────────────── Help ──────────────┐
 │                                  │
-│  ↑/k      上へスクロール         │
-│  ↓/j      下へスクロール         │
-│  g/Home   先頭へ移動             │
-│  G/End    末尾へ移動             │
-│  Ctrl+u   半画面上へ             │
-│  Ctrl+d   半画面下へ             │
+│  ↑/k      Scroll up              │
+│  ↓/j      Scroll down            │
+│  g/Home   Go to top              │
+│  G/End    Go to bottom           │
+│  Ctrl+u   Half page up           │
+│  Ctrl+d   Half page down         │
 │                                  │
-│  e        エディタ起動           │
-│  a        アーカイブ実行         │
-│  r        再読み込み             │
+│  e        Open editor            │
+│  a        Archive                │
+│  r        Reload                 │
 │                                  │
-│  q        終了                   │
-│  ?/h      ヘルプ                 │
+│  q        Quit                   │
+│  ?/h      Help                   │
 │                                  │
 │  Press any key to close          │
 └──────────────────────────────────┘
 ```
 
-### 配色とスタイリング
+### Colors and Styling
 
-最小限の配色でシンプルさを保ちます。
+Minimal coloring to maintain simplicity.
 
-| 要素 | スタイル |
-|------|---------|
-| 未完了タスク (`- [ ]`) | 通常表示 |
-| 完了タスク (`- [x]`) | グレー/暗色 |
-| `@done(日付)` | グレー/暗色 |
-| フッター | 反転表示 |
-| ヘルプオーバーレイ | ボーダー付き |
+| Element | Style |
+|---------|-------|
+| Incomplete task (`- [ ]`) | Normal display |
+| Completed task (`- [x]`) | Gray/dim |
+| `@done(date)` | Gray/dim |
+| Footer | Inverted |
+| Help overlay | With border |
 
-## エラー処理
+## Error Handling
 
-### 基本方針
+### Basic Policy
 
-- 致命的でないエラーは自動的に対処し、ユーザーの手間を省く
-- 致命的なエラーはメッセージを表示して終了
-- ファイル編集は直接編集（バックアップはGit自動コミットで保護）
+- Non-fatal errors are handled automatically, reducing user effort
+- Fatal errors display a message and exit
+- Files are edited directly (backups are protected by Git auto-commit)
 
-### 起動時
+### On Startup
 
-| ケース | 対応 |
-|--------|------|
-| 設定ファイルがない | デフォルト値で動作 |
-| working_dirがない | 自動作成 + `git init` |
-| tasks.mdがない | 空ファイルを自動作成 |
-| archive.mdがない | 初回アーカイブ時に自動作成 |
-| gitリポジトリでない | 自動で `git init` |
-| tasks.mdが読めない（権限エラー） | エラーメッセージ表示して終了 |
-| 設定ファイルの書式エラー | エラーメッセージ表示して終了 |
+| Case | Response |
+|------|----------|
+| No configuration file | Operate with default values |
+| working_dir doesn't exist | Auto-create + `git init` |
+| tasks.md doesn't exist | Auto-create empty file |
+| archive.md doesn't exist | Auto-create on first archive |
+| Not a git repository | Auto `git init` |
+| Cannot read tasks.md (permission error) | Display error message and exit |
+| Configuration file format error | Display error message and exit |
 
-### 実行時
+### At Runtime
 
-| ケース | 対応 |
-|--------|------|
-| エディタが見つからない | エラーメッセージをフッターに表示 |
-| エディタが異常終了 | ファイルを再読み込みして続行 |
-| archive.mdに書き込めない | エラーメッセージをフッターに表示 |
-| ファイルが外部で削除された | エラーメッセージ表示して終了 |
+| Case | Response |
+|------|----------|
+| Editor not found | Display error message in footer |
+| Editor exits abnormally | Reload file and continue |
+| Cannot write to archive.md | Display error message in footer |
+| File deleted externally | Display error message and exit |
 
-### エラーメッセージ例
+### Error Message Examples
 
-**起動時（致命的エラー）:**
+**On startup (fatal error):**
 ```
 Error: Cannot read ~/.ttt/tasks.md: permission denied
 ```
 
-**実行時（フッターに表示）:**
+**At runtime (displayed in footer):**
 ```
 Error: Editor not found: vim                [15/42]
 ```
 
-## Git連携
+## Git Integration
 
-nbコマンドに倣い、透過的なGit連携を提供します。ユーザーはGit操作を意識することなく、自動的にバージョン履歴が保存されます。
+Following the nb command approach, transparent Git integration is provided. Users don't need to be aware of Git operations; version history is automatically saved.
 
-### 自動コミット
+### Auto-commit
 
-以下のタイミングでバックグラウンドで自動コミット:
+Background auto-commit at the following times:
 
-- エディタ終了後（ファイル変更時）
-- アーカイブ実行後
-- `@done(日付)` 追加後
-- `ttt -t` でタスク追加時
+- After editor exit (on file changes)
+- After archive execution
+- After `@done(date)` addition
+- When adding task via `ttt -t`
 
-### 初期化
+### Initialization
 
-- working_dir作成時に自動で `git init`
-- 既存ディレクトリがgitリポジトリでない場合も自動で `git init`
+- Auto `git init` when creating working_dir
+- Auto `git init` even if existing directory is not a git repository
 
-### 設定
+### Repository File Auto-generation (v0.3.0)
+
+The following files are auto-generated if they don't exist during working_dir initialization and `ttt remote` execution.
+
+**README.md:**
+- Written in English
+- Includes brief ttt usage instructions
+- Includes creation date and ttt version
+- Includes link to ttt project
+
+**README.md content example:**
+```markdown
+# My Tasks
+
+This repository contains task files managed by [ttt (Tiny Task Tool)](https://github.com/yostos/tiny-task-tool).
+
+## Files
+
+- `tasks.md` - Current tasks
+- `archive.md` - Archived completed tasks
+
+## Quick Start
+
+ttt                    # Launch TUI
+ttt -t "Buy milk"      # Add a task
+ttt sync               # Sync with remote
+
+For more information, visit: https://github.com/yostos/tiny-task-tool
+
+---
+Created by ttt vX.Y.Z on YYYY-MM-DD
+```
+
+**.gitignore:**
+
+Excludes OS-generated files and editor temporary files.
+
+| Category | Target Files |
+|----------|--------------|
+| macOS | `.DS_Store`, `._*`, `.Spotlight-V100`, `.Trashes` |
+| Windows | `Thumbs.db`, `ehthumbs.db`, `Desktop.ini` |
+| Linux | `*~`, `.directory` |
+| Vim | `*.swp`, `*.swo`, `.*.swp` |
+| Emacs | `*~`, `\#*\#`, `.#*` |
+| VS Code | `.vscode/` |
+| Sublime Text | `*.sublime-workspace` |
+| nano | `.*.swp` |
+
+### Remote Repository Registration (v0.3.0)
+
+Register a remote repository with the `ttt remote <url>` command.
+
+```bash
+ttt remote https://github.com/user/my-tasks.git
+ttt remote git@github.com:user/my-tasks.git
+```
+
+**Behavior:**
+- Executes `git remote add origin <url>`
+- If origin already exists, updates with `git remote set-url origin <url>`
+- On success: Displays `Remote set to: <url>`
+- On failure: Displays error message and exits with code 1
+
+### Manual Sync (v0.3.0)
+
+Execute manual sync with the `ttt sync` command.
+
+```bash
+ttt sync
+```
+
+**Behavior:**
+1. `git pull origin <current-branch>` to fetch from remote
+   - On first sync (remote branch doesn't exist), skip pull
+2. Auto-commit if there are uncommitted changes
+3. `git push origin <current-branch>` to push to remote
+
+**Error Handling:**
+- Remote not configured: Display `Error: No remote 'origin' configured. Use 'ttt remote <url>' first.`
+- Conflict on pull: Display `Error: Merge conflict detected. Please resolve manually.` and output diff with `git diff`
+- Pull failure (no branch on remote, etc.): Skip pull and proceed to commit → push
+- Push failure: Display error message
+
+**Notes:**
+- `auto_sync` setting is not provided. Sync is always manual with `ttt sync`
+- No sync functionality from TUI. TUI remains a viewer only
+- Safe to use in offline environments
+
+### Configuration
 
 ```toml
 [git]
-auto_commit = true  # デフォルト有効、false で無効化可能
+auto_commit = true  # Enabled by default, can be disabled with false
 ```
 
-## スコープと制約
+## Installation Methods (v0.3.0)
 
-### 実装済み機能（v0.1.0〜v0.2.0）
+### go install
 
-- [x] メインファイルの閲覧（スクロール可能）
-- [x] 完了タスク（`- [x]`）の検出
-- [x] 完了タスクのアーカイブ（`@done(日付)`自動追加）
-- [x] 外部エディタ起動（設定ファイルのテンプレート使用）
-- [x] 基本的なキーバインド（↑↓, e, a, r, q, ?/h）
-- [x] コマンドラインからのタスク追加（`-t`, `--task`）
-- [x] Git自動コミット（透過的なバージョン管理）
-- [x] 階層タスク（親子関係、完了カスケード、一括アーカイブ）
+Supports `go install` as Go's standard installation method.
 
-### 将来機能
+```bash
+go install github.com/yostos/tiny-task-tool@latest
+```
 
-将来バージョンで実装予定の機能については [roadmap.md](roadmap.md) を参照してください。
+**Requirements:**
+- Go 1.21 or later
+- `$GOPATH/bin` or `$HOME/go/bin` must be in PATH
+
+**Version Information:**
+- `@latest` installs the latest release
+- Tag specification like `@v0.3.0` is also possible
+
+### make install
+
+Use `make install` when building and installing from source.
+
+```bash
+# Default: Install to $GOPATH/bin
+make install
+
+# Custom directory: Install to PREFIX/bin
+make install PREFIX=/usr/local
+```
+
+**Makefile Targets:**
+- `make build` - Build binary (generates `ttt` in current directory)
+- `make install` - Build and install
+- `make test` - Run tests
+- `make lint` - Static analysis
+- `make check` - test + lint
+- `make clean` - Remove build artifacts
+- `make version` - Show current version
+
+### Homebrew (macOS / Linux)
+
+Supports installation via Homebrew.
+
+```bash
+brew install yostos/tap/ttt
+```
+
+**Tap Repository:**
+- Formula placed in `github.com/yostos/homebrew-tap`
+- Formula name: `ttt.rb`
+
+**Formula Contents:**
+- Builds with Go (`go build`)
+- Version synced with GitHub Release tags
+- Supports Darwin (macOS) and Linux
+
+## Scope and Constraints
+
+### Implemented Features (v0.1.0〜v0.2.0)
+
+- [x] Main file viewing (scrollable)
+- [x] Completed task detection (`- [x]`)
+- [x] Completed task archiving (auto-add `@done(date)`)
+- [x] External editor launch (using configuration file template)
+- [x] Basic keybindings (↑↓, e, a, r, q, ?/h)
+- [x] Task addition from command line (`-t`, `--task`)
+- [x] Git auto-commit (transparent version control)
+- [x] Hierarchical tasks (parent-child relationships, completion cascade, batch archive)
+
+### Future Features
+
+For features planned for future versions, see [roadmap.md](roadmap.md).
 
 
-### リソース制約
+### Resource Constraints
 
-- 個人開発（メンテナンス負荷を最小に）
-- ドキュメントは最小限
+- Solo development (minimize maintenance burden)
+- Minimal documentation
   - README.md
-  - concept.md（構想・思想）
-  - specification.md（この文書）
-  - architecture.md（技術選定・アーキテクチャ）
-  - roadmap.md（将来計画）
-- テストは必要最小限（コア機能のみ）
+  - concept.md (vision and philosophy)
+  - specification.md (this document)
+  - architecture.md (technology choices and architecture)
+  - roadmap.md (future plans)
+- Tests are minimal (core functions only)
