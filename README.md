@@ -7,6 +7,8 @@
 
 A minimal TUI task manager for the terminal.
 
+![demo](images/demo.gif)
+
 ## Philosophy
 
 - **One sheet of paper** - One file, no folders, no decisions
