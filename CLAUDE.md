@@ -76,7 +76,9 @@ Uses TaskPaper-style completion dates:
 
 Completed tasks are archived to `archive.md` after a configurable delay period.
 
-## Git Branch Strategy
+## Git Branch Strategy (MANDATORY)
+
+**NEVER commit directly to main. This is an absolute rule.**
 
 Adopting GitHub Flow:
 
@@ -84,14 +86,33 @@ Adopting GitHub Flow:
 main (always releasable)
   ├── feature/xxx    # Feature additions
   ├── fix/xxx        # Bug fixes
+  ├── refactor/xxx   # Code refactoring
   └── docs/xxx       # Documentation updates
 ```
 
-**Rules:**
-- `main` is always kept in a releasable state
-- Work is always done on a branch
-- Squash merge to main when complete
-- Versions are managed with tags (`v0.1.0`, etc.)
+**Rules (MUST follow):**
+1. **NEVER commit directly to main** - Always create a branch first
+2. **ALWAYS create a PR** - Even for small changes, create a Pull Request
+3. `main` is always kept in a releasable state
+4. Squash merge to main when complete
+5. Versions are managed with tags (`v0.1.0`, etc.)
+
+### Standard Workflow (ALL changes)
+
+```bash
+# 1. Create branch FIRST (before any changes)
+git checkout -b feature/xxx   # or fix/xxx, refactor/xxx, docs/xxx
+
+# 2. Make changes and commit
+git add .
+git commit -m "feat: Add feature"
+
+# 3. Push and create PR
+git push -u origin feature/xxx
+gh pr create --title "feat: Add feature" --body "Description"
+
+# 4. Merge on GitHub (squash merge)
+```
 
 **GitHub CLI (gh) is available:**
 ```bash
