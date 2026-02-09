@@ -280,3 +280,4 @@
 - [x] v0.4.0 タグ作成
 - [x] CHANGELOG.md 更新
 - [x] GitHub Release 公開
+- [x] Homebrew formula 更新（yostos/homebrew-tap の ttt.rb）

@@ -39,6 +39,9 @@ Make sure `$GOPATH/bin` or `$HOME/go/bin` is in your PATH.
 
 ```bash
 brew install yostos/tap/ttt
+
+# Upgrade to latest version
+brew update && brew upgrade yostos/tap/ttt
 ```
 
 ### From Source
