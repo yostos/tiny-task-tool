@@ -1,6 +1,6 @@
 # ttt - Roadmap
 
-Updated: 2026-01-22.
+Updated: 2026-02-09.
 
 ## Versioning Policy
 
@@ -54,10 +54,26 @@ Git sync functionality and public beta preparation.
 
 ## v0.4.0 (Planned)
 
-Display improvements.
+Display improvements and due date support.
 
-- [ ] Syntax highlighting (color-coding for tasks, headings, completion marks)
-- [ ] Simple statistics display (today's task count, completion count, etc.)
+### Syntax Highlighting
+
+- [ ] Headings (`#`, `##`, etc.) in cyan/bold
+- [ ] Completed tasks (`- [x]`) in gray
+- [ ] Due date color coding based on urgency
+- [ ] Configurable colors via `[colors]` section in config
+
+### Due Date Support (`@due` tag)
+
+- [ ] `@due(YYYY-MM-DD)` tag parsing (display only, not auto-managed)
+- [ ] Overdue tasks highlighted in red
+- [ ] Due soon tasks (within threshold) in green
+- [ ] Configurable warning threshold (`display.due_warning_days`)
+
+### Statistics Display
+
+- [ ] Footer shows: completed today, incomplete, overdue counts
+- [ ] Detailed statistics in help overlay (hierarchy breakdown)
 
 ---
 
@@ -67,7 +83,6 @@ Additional features. Low priority, implementation undecided.
 
 - [ ] Snapshot feature (save today's state)
 - [ ] Archive to separate file (selectable in settings)
-- [ ] Due date support (`@due(YYYY-MM-DD)`)
 
 ---
 
