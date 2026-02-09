@@ -1,6 +1,6 @@
 # ttt (Tiny Task Tool) - Specification
 
-Updated: 2026-01-22.
+Updated: 2026-02-09.
 
 ## About This Document
 
@@ -240,6 +240,22 @@ half_page_down = ["ctrl+d"]
 # Auto-commit (enabled by default)
 # Automatically git commit in background on changes
 auto_commit = true
+
+[display]
+# Days before due date to show warning color (v0.4.0)
+due_warning_days = 7
+
+[colors]
+# Color scheme customization (v0.4.0)
+# Available colors: black, red, green, yellow, blue, magenta, cyan, white, gray
+# Bright variants: bright_black, bright_red, bright_green, bright_yellow,
+#                  bright_blue, bright_magenta, bright_cyan, bright_white
+heading = "cyan"
+incomplete = "white"
+completed = "gray"
+overdue = "red"
+due_soon = "green"
+due_future = "white"
 ```
 
 ### Default Values
@@ -261,6 +277,13 @@ When the configuration file doesn't exist, these default values are used:
 - `keybindings.half_page_up` → `["ctrl+u"]`
 - `keybindings.half_page_down` → `["ctrl+d"]`
 - `git.auto_commit` → `true`
+- `display.due_warning_days` → `7` (v0.4.0)
+- `colors.heading` → `"cyan"` (v0.4.0)
+- `colors.incomplete` → `"white"` (v0.4.0)
+- `colors.completed` → `"gray"` (v0.4.0)
+- `colors.overdue` → `"red"` (v0.4.0)
+- `colors.due_soon` → `"green"` (v0.4.0)
+- `colors.due_future` → `"white"` (v0.4.0)
 
 ### Design Rationale
 
@@ -352,15 +375,29 @@ Based on the "one sheet of paper" concept, only minimal information is displayed
 - Scrollable
 - No line numbers displayed
 
-#### Footer (1 line)
+#### Footer (2 lines, v0.4.0)
 
-**Normal display:**
+**Normal display (v0.3.x and earlier, 1 line):**
 ```
 ? help | e edit | a archive | q quit    [15/42] ttt v0.1.0
 ```
 
-- Left side: Key operation hints
-- Right side: Scroll position `[current line/total lines]` and version info
+**Enhanced display (v0.4.0, 2 lines):**
+```
+Total: 12  Incomplete: 5  Completed: 7 (3 today)  Overdue: 2
+? help | e edit | a archive | q quit              [15/42] v0.4.0
+```
+
+- Line 1: Statistics (always visible)
+- Line 2: Key operation hints + Scroll position + Version
+
+**Statistics format (v0.4.0):**
+| Field | Description |
+|-------|-------------|
+| Total | Total number of tasks |
+| Incomplete | Tasks with `- [ ]` |
+| Completed | Tasks with `- [x]`, with today's count in parentheses |
+| Overdue | Tasks with `@due` past due date (shown only if > 0) |
 
 ### Status Messages
 
@@ -410,17 +447,66 @@ Customized keybindings are reflected dynamically.
 └──────────────────────────────────┘
 ```
 
-### Colors and Styling
+### Colors and Styling (v0.4.0)
 
-Minimal coloring to maintain simplicity.
+Syntax highlighting enhances readability while maintaining simplicity.
 
-| Element | Style |
-|---------|-------|
-| Incomplete task (`- [ ]`) | Normal display |
-| Completed task (`- [x]`) | Gray/dim |
-| `@done(date)` | Gray/dim |
-| Footer | Inverted |
-| Help overlay | With border |
+#### Default Color Scheme
+
+| Element | Style | Description |
+|---------|-------|-------------|
+| Headings (`#`, `##`, etc.) | Bold + Cyan | Markdown headings stand out |
+| Incomplete task (`- [ ]`) | Normal (White) | Default text color |
+| Completed task (`- [x]`) | Gray/dim | Visually de-emphasized |
+| `@done(date)` | Gray/dim | Part of completed task styling |
+| Overdue task (`@due` past) | Red | Urgent attention needed |
+| Due soon (`@due` within threshold) | Green | Approaching deadline |
+| Future task (`@due` beyond threshold) | Normal (White) | No urgency |
+| Footer | Inverted | Standard footer style |
+| Help overlay | With border | Modal overlay |
+
+#### Due Date Display (`@due` tag) (v0.4.0)
+
+Tasks can have due dates specified with the `@due(YYYY-MM-DD)` tag:
+
+```markdown
+- [ ] Submit report @due(2026-02-15)
+- [ ] Review PR @due(2026-02-10)
+```
+
+**Color Logic:**
+1. **Overdue** (past due date): Red - requires immediate attention
+2. **Due soon** (within `due_warning_days`): Green - approaching deadline
+3. **Future** (beyond `due_warning_days`): Normal white - no urgency
+
+**Note:** The `@due` tag is for display purposes only. Unlike `@done`, it is not auto-managed by ttt. Users add/remove `@due` tags manually via the editor.
+
+#### Color Configuration (v0.4.0)
+
+Colors can be customized in the configuration file:
+
+```toml
+[display]
+# Days before due date to show warning color (green)
+due_warning_days = 7
+
+[colors]
+# Color names: black, red, green, yellow, blue, magenta, cyan, white
+# Add "bright_" prefix for bright variants: bright_red, bright_green, etc.
+heading = "cyan"
+incomplete = "white"
+completed = "gray"
+overdue = "red"
+due_soon = "green"
+due_future = "white"
+```
+
+#### Design Rationale
+
+- **Line-based coloring**: Entire line is colored for quick visual scanning
+- **Semantic colors**: Red=urgent, Green=attention, Gray=done (intuitive)
+- **Configurable threshold**: `due_warning_days` allows personal workflow adjustment
+- **Configurable colors**: Accessibility and terminal theme compatibility
 
 ## Error Handling
 

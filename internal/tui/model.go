@@ -10,9 +10,11 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/yostos/tiny-task-tool/internal/cli"
 	"github.com/yostos/tiny-task-tool/internal/config"
+	"github.com/yostos/tiny-task-tool/internal/display"
 	"github.com/yostos/tiny-task-tool/internal/task"
 )
 
@@ -33,6 +35,8 @@ type Model struct {
 	tasksPath   string
 	archivePath string
 	showHelp    bool
+	renderer    *display.Renderer
+	stats       display.Statistics
 }
 
 // New creates a new TUI model.
@@ -45,10 +49,17 @@ func New(cfg *config.Config, content string) Model {
 	} else {
 		lines = strings.Split(trimmed, "\n")
 	}
+
+	renderer := display.NewRenderer(cfg)
+	today := time.Now()
+	stats := renderer.CalculateStatistics(content, today)
+
 	return Model{
-		config:  cfg,
-		content: content,
-		lines:   lines,
+		config:   cfg,
+		content:  content,
+		lines:    lines,
+		renderer: renderer,
+		stats:    stats,
 	}
 }
 
@@ -83,12 +94,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 
 		headerHeight := 0
-		footerHeight := 1
+		footerHeight := 2
 		verticalMargins := headerHeight + footerHeight
 
 		if !m.ready {
 			m.viewport = viewport.New(msg.Width, msg.Height-verticalMargins)
-			m.viewport.SetContent(m.content)
+			today := time.Now()
+			renderedContent := m.renderer.RenderContent(m.content, today)
+			m.viewport.SetContent(renderedContent)
 			m.ready = true
 		} else {
 			m.viewport.Width = msg.Width
@@ -135,7 +148,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.content = msg.Content
 		m.lines = parseLines(msg.Content)
-		m.viewport.SetContent(msg.Content)
+		today := time.Now()
+		m.stats = m.renderer.CalculateStatistics(msg.Content, today)
+		renderedContent := m.renderer.RenderContent(msg.Content, today)
+		m.viewport.SetContent(renderedContent)
 		m, cmd := m.setStatusWithTimeout("Reloaded")
 		return m, cmd
 
@@ -258,19 +274,54 @@ func (m Model) View() string {
 	base := m.viewport.View() + "\n" + m.footerView()
 
 	if m.showHelp {
-		return m.overlayHelp(base)
+		// Strip ANSI codes from background to avoid corrupting
+		// escape sequences when overlaying with multibyte characters
+		plainBase := ansi.Strip(base)
+		return m.overlayHelp(plainBase)
 	}
 
 	return base
 }
 
-// footerView renders the footer bar.
+// footerView renders the two-line footer (statistics + keybindings).
 func (m Model) footerView() string {
 	style := lipgloss.NewStyle().
 		Background(lipgloss.Color("240")).
 		Foreground(lipgloss.Color("252")).
 		Width(m.width)
 
+	// Line 1: Statistics
+	statsLine := m.statsLineView()
+
+	// Line 2: Key hints and scroll position
+	keysLine := m.keysLineView()
+
+	return style.Render(statsLine) + "\n" + style.Render(keysLine)
+}
+
+// statsLineView renders the statistics line.
+func (m Model) statsLineView() string {
+	s := m.stats
+	statsText := "Total: " + strconv.Itoa(s.Total) +
+		"  Incomplete: " + strconv.Itoa(s.Incomplete) +
+		"  Completed: " + strconv.Itoa(s.Completed) +
+		" (" + strconv.Itoa(s.CompletedToday) + " today)"
+
+	if s.Overdue > 0 {
+		statsText += "  Overdue: " + strconv.Itoa(s.Overdue)
+	}
+
+	// Pad to full width
+	textWidth := lipgloss.Width(statsText)
+	padding := m.width - textWidth
+	if padding < 0 {
+		padding = 0
+	}
+	return statsText + strings.Repeat(" ", padding)
+}
+
+// keysLineView renders the keybindings and scroll position line.
+func (m Model) keysLineView() string {
 	// Left side: key hints or status message
 	var left string
 	if m.status != "" {
@@ -290,10 +341,8 @@ func (m Model) footerView() string {
 		currentLine = 1
 	}
 	position := formatPosition(currentLine, totalLines)
-	version := "ttt " + cli.Version
-	right := lipgloss.NewStyle().
-		Align(lipgloss.Right).
-		Render(position + " " + version)
+	version := cli.Version
+	right := position + " " + version
 
 	// Calculate padding
 	leftWidth := lipgloss.Width(left)
@@ -303,8 +352,7 @@ func (m Model) footerView() string {
 		padding = 0
 	}
 
-	footer := left + strings.Repeat(" ", padding) + right
-	return style.Render(footer)
+	return left + strings.Repeat(" ", padding) + right
 }
 
 func formatPosition(current, total int) string {
@@ -459,7 +507,7 @@ func (m Model) overlayHelp(base string) string {
 		"  " + padRight(halfPageDownKeys, 12) + "Half page down",
 		"",
 		"  " + padRight("e", 12) + "Open editor",
-		"  " + padRight("a", 12) + "Archive tasks",
+		"  " + padRight("a", 12) + "Archive",
 		"  " + padRight("r", 12) + "Reload",
 		"",
 		"  " + padRight("q", 12) + "Quit",

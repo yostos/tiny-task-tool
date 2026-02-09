@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Syntax highlighting
+  - Headings (`#`, `##`, etc.) displayed in cyan/bold
+  - Completed tasks (`- [x]`) displayed in gray
+  - `@due(YYYY-MM-DD)` tag support for deadline tracking
+  - Overdue tasks displayed in red
+  - Due soon tasks (within threshold) displayed in green
+- Two-line footer with statistics
+  - Line 1: Total, Incomplete, Completed (today), Overdue counts
+  - Line 2: Key hints, scroll position, version
+- New configuration sections
+  - `[display]` section with `due_warning_days` setting
+  - `[colors]` section for customizing all colors
+
+### Fixed
+
+- Help overlay display corruption with multibyte characters in background
+  - Strip ANSI codes from background before overlay rendering
+
 ## [0.3.1] - 2026-01-22
 
 ### Fixed

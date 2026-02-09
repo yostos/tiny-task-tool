@@ -16,6 +16,8 @@ type Config struct {
 	Editor      EditorConfig      `toml:"editor"`
 	Keybindings KeybindingsConfig `toml:"keybindings"`
 	Git         GitConfig         `toml:"git"`
+	Display     DisplayConfig     `toml:"display"`
+	Colors      ColorsConfig      `toml:"colors"`
 }
 
 // FileConfig defines file location settings.
@@ -47,6 +49,21 @@ type KeybindingsConfig struct {
 // GitConfig defines git integration settings.
 type GitConfig struct {
 	AutoCommit bool `toml:"auto_commit"`
+}
+
+// DisplayConfig defines display settings.
+type DisplayConfig struct {
+	DueWarningDays int `toml:"due_warning_days"`
+}
+
+// ColorsConfig defines color scheme settings.
+type ColorsConfig struct {
+	Heading    string `toml:"heading"`
+	Incomplete string `toml:"incomplete"`
+	Completed  string `toml:"completed"`
+	Overdue    string `toml:"overdue"`
+	DueSoon    string `toml:"due_soon"`
+	DueFuture  string `toml:"due_future"`
 }
 
 // Fixed file names (not configurable).
@@ -84,6 +101,17 @@ func Default() *Config {
 		},
 		Git: GitConfig{
 			AutoCommit: true,
+		},
+		Display: DisplayConfig{
+			DueWarningDays: 7,
+		},
+		Colors: ColorsConfig{
+			Heading:    "cyan",
+			Incomplete: "white",
+			Completed:  "gray",
+			Overdue:    "red",
+			DueSoon:    "green",
+			DueFuture:  "white",
 		},
 	}
 }

@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ttt (Tiny Task Tool)** is a TUI (Terminal User Interface) application for simple task management, following the "one sheet of paper" philosophy. It provides a minimal, distraction-free way to manage tasks without leaving the terminal.
+<!-- jrnl-project: tiny-task-tool -->
+
+- **Project Name**: tiny-task-tool
+- **Description**:
+  **ttt (Tiny Task Tool)** is a TUI (Terminal User Interface) application for simple task management, following the "one sheet of paper" philosophy. It provides a minimal, distraction-free way to manage tasks without leaving the terminal.
 
 ## Technology Stack
 
@@ -33,6 +37,7 @@ golangci-lint run --fix        # Auto-fix issues
 ### Elm Architecture (bubbletea)
 
 The application follows the Elm Architecture pattern:
+
 - **Model:** Application state
 - **Update:** State transitions based on messages (key presses, etc.)
 - **View:** Render state to terminal output
@@ -69,6 +74,7 @@ ttt --version                # Version
 ## Task Format
 
 Uses TaskPaper-style completion dates:
+
 ```markdown
 - [ ] Incomplete task
 - [x] Completed task @done(2026-01-18)
@@ -91,6 +97,7 @@ main (always releasable)
 ```
 
 **Rules (MUST follow):**
+
 1. **NEVER commit directly to main** - Always create a branch first
 2. **ALWAYS create a PR** - Even for small changes, create a Pull Request
 3. `main` is always kept in a releasable state
@@ -115,6 +122,7 @@ gh pr create --title "feat: Add feature" --body "Description"
 ```
 
 **GitHub CLI (gh) is available:**
+
 ```bash
 gh pr create --title "Add feature" --body "Description"
 gh pr list
@@ -181,6 +189,7 @@ gh pr create --title "Fix #1: ..." --body "Closes #1"
    - Place integration tests in `_test.go` files or separate `integration_test.go`
 
 **Example of proper test structure:**
+
 ```go
 // config.go has these Public functions:
 // - Load(), ConfigPath(), ExpandPath(), etc.
@@ -203,6 +212,7 @@ func TestExpandPath(t *testing.T) { ... }              // What ExpandPath() does
    - Do NOT use loose assertions like `HasSuffix()` or `Contains()` when exact values are specified
 
 2. **Test comments should reference specification**
+
    ```go
    // TestConfigPath verifies that ConfigPath() returns ~/.config/ttt/config.toml.
    // Spec: docs/specification.md "Configuration File Specification" section
