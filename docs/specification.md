@@ -673,7 +673,7 @@ go install github.com/yostos/tiny-task-tool@latest
 ```
 
 **Requirements:**
-- Go 1.21 or later
+- Go 1.24 or later
 - `$GOPATH/bin` or `$HOME/go/bin` must be in PATH
 
 **Version Information:**
