@@ -52,28 +52,28 @@ Git sync functionality and public beta preparation.
 
 ---
 
-## v0.4.0 (Planned)
+## v0.4.0 (Released)
 
 Display improvements and due date support.
 
 ### Syntax Highlighting
 
-- [ ] Headings (`#`, `##`, etc.) in cyan/bold
-- [ ] Completed tasks (`- [x]`) in gray
-- [ ] Due date color coding based on urgency
-- [ ] Configurable colors via `[colors]` section in config
+- [x] Headings (`#`, `##`, etc.) in cyan/bold
+- [x] Completed tasks (`- [x]`) in gray
+- [x] Due date color coding based on urgency
+- [x] Configurable colors via `[colors]` section in config
 
 ### Due Date Support (`@due` tag)
 
-- [ ] `@due(YYYY-MM-DD)` tag parsing (display only, not auto-managed)
-- [ ] Overdue tasks highlighted in red
-- [ ] Due soon tasks (within threshold) in green
-- [ ] Configurable warning threshold (`display.due_warning_days`)
+- [x] `@due(YYYY-MM-DD)` tag parsing (display only, not auto-managed)
+- [x] Overdue tasks highlighted in red
+- [x] Due soon tasks (within threshold) in green
+- [x] Configurable warning threshold (`display.due_warning_days`)
 
 ### Statistics Display
 
-- [ ] Footer shows: completed today, incomplete, overdue counts
-- [ ] Detailed statistics in help overlay (hierarchy breakdown)
+- [x] Footer shows: completed today, incomplete, overdue counts
+- [x] Detailed statistics in help overlay (hierarchy breakdown)
 
 ---
 
