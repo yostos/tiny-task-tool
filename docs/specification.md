@@ -375,47 +375,29 @@ Based on the "one sheet of paper" concept, only minimal information is displayed
 - Scrollable
 - No line numbers displayed
 
-#### Footer (1 line)
+#### Footer (2 lines, v0.4.0)
 
-**Normal display (v0.3.x and earlier):**
+**Normal display (v0.3.x and earlier, 1 line):**
 ```
 ? help | e edit | a archive | q quit    [15/42] ttt v0.1.0
 ```
 
-**Enhanced display (v0.4.0):**
+**Enhanced display (v0.4.0, 2 lines):**
 ```
-? help | e edit | a archive | q quit    ✓3 ○5 !2 [15/42] v0.4.0
+Total: 12  Incomplete: 5  Completed: 7 (3 today)  Overdue: 2
+? help | e edit | a archive | q quit              [15/42] v0.4.0
 ```
 
-- Left side: Key operation hints
-- Right side: Statistics + Scroll position + Version
+- Line 1: Statistics (always visible)
+- Line 2: Key operation hints + Scroll position + Version
 
 **Statistics format (v0.4.0):**
-| Symbol | Meaning | Description |
-|--------|---------|-------------|
-| `✓N` | Completed today | Tasks marked done with today's date |
-| `○N` | Incomplete | Total incomplete tasks (`- [ ]`) |
-| `!N` | Overdue/Due soon | Tasks with `@due` that are overdue or due within threshold |
-
-**Hierarchy breakdown (optional, shown in help overlay):**
-
-When pressing `?` for help, detailed statistics are shown:
-
-```
-┌────────────── Help ──────────────┐
-│  Statistics                      │
-│  ─────────────────────────────── │
-│  Total tasks:     12             │
-│  ├─ Incomplete:    5             │
-│  ├─ Completed:     7 (3 today)   │
-│  └─ Overdue:       2             │
-│                                  │
-│  By level:                       │
-│  ├─ Root tasks:    8             │
-│  └─ Subtasks:      4             │
-│  ...                             │
-└──────────────────────────────────┘
-```
+| Field | Description |
+|-------|-------------|
+| Total | Total number of tasks |
+| Incomplete | Tasks with `- [ ]` |
+| Completed | Tasks with `- [x]`, with today's count in parentheses |
+| Overdue | Tasks with `@due` past due date (shown only if > 0) |
 
 ### Status Messages
 

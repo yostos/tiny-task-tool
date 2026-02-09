@@ -34,6 +34,31 @@ func TestDefault(t *testing.T) {
 	if len(cfg.Keybindings.Up) != 1 || cfg.Keybindings.Up[0] != "k" {
 		t.Errorf("Keybindings.Up = %v, want %v", cfg.Keybindings.Up, expectedUp)
 	}
+
+	// Verify display settings (v0.4.0)
+	if cfg.Display.DueWarningDays != 7 {
+		t.Errorf("Display.DueWarningDays = %d, want %d", cfg.Display.DueWarningDays, 7)
+	}
+
+	// Verify colors settings (v0.4.0)
+	if cfg.Colors.Heading != "cyan" {
+		t.Errorf("Colors.Heading = %q, want %q", cfg.Colors.Heading, "cyan")
+	}
+	if cfg.Colors.Incomplete != "white" {
+		t.Errorf("Colors.Incomplete = %q, want %q", cfg.Colors.Incomplete, "white")
+	}
+	if cfg.Colors.Completed != "gray" {
+		t.Errorf("Colors.Completed = %q, want %q", cfg.Colors.Completed, "gray")
+	}
+	if cfg.Colors.Overdue != "red" {
+		t.Errorf("Colors.Overdue = %q, want %q", cfg.Colors.Overdue, "red")
+	}
+	if cfg.Colors.DueSoon != "green" {
+		t.Errorf("Colors.DueSoon = %q, want %q", cfg.Colors.DueSoon, "green")
+	}
+	if cfg.Colors.DueFuture != "white" {
+		t.Errorf("Colors.DueFuture = %q, want %q", cfg.Colors.DueFuture, "white")
+	}
 }
 
 // TestConfigDir verifies that ConfigDir() respects XDG_CONFIG_HOME.
@@ -312,5 +337,65 @@ working_dir = "~/custom-tasks"
 	// Should return custom value, not default
 	if cfg.File.WorkingDir != "~/custom-tasks" {
 		t.Errorf("WorkingDir = %q, want %q", cfg.File.WorkingDir, "~/custom-tasks")
+	}
+}
+
+// TestLoadDisplayAndColorsConfig verifies that Display and Colors settings are loaded from config file.
+// Spec: docs/specification.md "Configuration File Specification" - [display] and [colors] sections.
+func TestLoadDisplayAndColorsConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tmpDir)
+
+	configDir := filepath.Join(tmpDir, "ttt")
+	configPath := filepath.Join(configDir, "config.toml")
+
+	// Create config directory and file with custom display and colors
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("MkdirAll() error: %v", err)
+	}
+	customConfig := `[display]
+due_warning_days = 14
+
+[colors]
+heading = "magenta"
+incomplete = "bright_white"
+completed = "bright_black"
+overdue = "bright_red"
+due_soon = "yellow"
+due_future = "blue"
+`
+	if err := os.WriteFile(configPath, []byte(customConfig), 0644); err != nil {
+		t.Fatalf("WriteFile() error: %v", err)
+	}
+
+	// Load should read custom display and colors values
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+
+	// Verify display settings
+	if cfg.Display.DueWarningDays != 14 {
+		t.Errorf("Display.DueWarningDays = %d, want %d", cfg.Display.DueWarningDays, 14)
+	}
+
+	// Verify colors settings
+	if cfg.Colors.Heading != "magenta" {
+		t.Errorf("Colors.Heading = %q, want %q", cfg.Colors.Heading, "magenta")
+	}
+	if cfg.Colors.Incomplete != "bright_white" {
+		t.Errorf("Colors.Incomplete = %q, want %q", cfg.Colors.Incomplete, "bright_white")
+	}
+	if cfg.Colors.Completed != "bright_black" {
+		t.Errorf("Colors.Completed = %q, want %q", cfg.Colors.Completed, "bright_black")
+	}
+	if cfg.Colors.Overdue != "bright_red" {
+		t.Errorf("Colors.Overdue = %q, want %q", cfg.Colors.Overdue, "bright_red")
+	}
+	if cfg.Colors.DueSoon != "yellow" {
+		t.Errorf("Colors.DueSoon = %q, want %q", cfg.Colors.DueSoon, "yellow")
+	}
+	if cfg.Colors.DueFuture != "blue" {
+		t.Errorf("Colors.DueFuture = %q, want %q", cfg.Colors.DueFuture, "blue")
 	}
 }

@@ -87,7 +87,21 @@ Tasks use a simple markdown checkbox format:
 
 ```markdown
 - [ ] Incomplete task
+- [ ] Task with deadline @due(2026-02-15)
 - [x] Completed task @done(2026-01-18)
+```
+
+### Due Dates
+
+Add `@due(YYYY-MM-DD)` to track deadlines. Tasks are color-coded by urgency:
+
+- **Red**: Overdue (past due date)
+- **Green**: Due soon (within 7 days by default)
+- **White**: Future (beyond threshold)
+
+```markdown
+- [ ] Submit report @due(2026-02-15)
+- [ ] Review PR @due(2026-02-10)
 ```
 
 ### Hierarchical Tasks
@@ -122,6 +136,21 @@ Tasks can have children using 2-space indentation:
 | `q` | Quit |
 | `?` / `h` | Show help |
 
+## Display
+
+The TUI features syntax highlighting and a two-line footer:
+
+```
+Total: 12  Incomplete: 5  Completed: 7 (3 today)  Overdue: 2
+? help | e edit | a archive | q quit              [15/42] v0.4.0
+```
+
+**Syntax highlighting:**
+- Headings (`#`, `##`, etc.) are shown in cyan/bold
+- Completed tasks are shown in gray
+- Overdue tasks (`@due` in the past) are shown in red
+- Due soon tasks (`@due` within threshold) are shown in green
+
 ## Configuration
 
 Configuration file location: `~/.config/ttt/config.toml`
@@ -146,6 +175,17 @@ command = "vim {file}"
 # Customize navigation keys
 up = ["k"]
 down = ["j"]
+
+[display]
+# Days before due date to show warning color
+due_warning_days = 7
+
+[colors]
+# Customize colors (black, red, green, yellow, blue, magenta, cyan, white, gray)
+heading = "cyan"
+completed = "gray"
+overdue = "red"
+due_soon = "green"
 ```
 
 ### Default Values
@@ -156,6 +196,8 @@ If no config file exists, these defaults are used:
 - `archive.auto`: `false`
 - `archive.delay_days`: `2`
 - `editor.command`: `$EDITOR {file}` (falls back to `vi {file}`)
+- `display.due_warning_days`: `7`
+- `colors.heading`: `cyan`, `colors.completed`: `gray`, `colors.overdue`: `red`, `colors.due_soon`: `green`
 
 ## Archive
 
